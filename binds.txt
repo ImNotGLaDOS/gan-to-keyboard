@@ -1,2 +1,2 @@
 R L' - alt+tab+0.5s
-L' R2 - win+D+0.5s
+R U R' U' R' F R2 U' R' U' R U  R' F' - win+D+0.5s

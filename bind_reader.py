@@ -12,8 +12,10 @@ def upload_binds() -> dict[tuple[str], str]:
         bind = bind[:bind.find('#')]
       
       bind = bind.split('-')
-      formula: list[str] = bind[0].strip().split(' ')  # example: ['L', 'R\'', 'U2']
+      formula: list[str] = bind[0].strip().split()  # example: ['L', 'R\'', 'U2']
       key: list[str] = bind[1].strip().replace(' ', '').split('+')  # ['ctrl', 'R', '0.5s']
 
       ret[tuple(formula)] = key
+  
+  print(f'[BindReader]: readed binds: {ret}')
   return ret

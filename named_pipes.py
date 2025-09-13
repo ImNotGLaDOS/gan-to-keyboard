@@ -40,6 +40,10 @@ class PipeSender:
       self._print(f"Failed to write to pipe: {e}")
       # Potentially handle pipe disconnection here
       self.pipe = None
+  
+
+  def __del__(self):
+    win32file.CloseHandle(self.pipe)
 
 
 
@@ -55,7 +59,7 @@ class PipeReader:
 
   def connect(self):
     self._print(f"Waiting for a client to connect to pipe {self.pipe_name}...")
-    sleep(0.1)  # Wait for the pipe to be created
+    sleep(2)  # Wait for the pipe to be created
     
     # Create the named pipe
     pipe_handle = win32file.CreateFile(
@@ -81,8 +85,10 @@ class PipeReader:
       if win32pipe.PeekNamedPipe(self.pipe, 0)[1] == 0:
         return False
       data = win32file.ReadFile(self.pipe, 65536)
-      buffer.extend(data[1].decode('utf-8').strip().split(' '))
-      self._print('Read:', data[1].decode('utf-8').strip())
+      data = data[1].decode('utf-8').strip().split(' ')
+      data = ''.join(data)
+      buffer.append(data)
+      self._print(f'Read: {data}')
       return True
     except win32file.error as e:
       if e.winerror == 232:  # EOF

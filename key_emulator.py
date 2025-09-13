@@ -99,6 +99,29 @@ class KeyEmulator:
 
 
 def trim_buffer(buffer: list[str]) -> None:
+  while len(buffer) > 1 and buffer[-1][0] == buffer[-2][0]:
+    n1 = buffer[-1][1:]
+    if n1 == '\'': n1 = 3
+    elif n1 != '': n1 = int(n1)
+    else: n1 = 1
+    del buffer[-1]
+    
+    n2 = buffer[-1][1:]
+    if n2 == '\'': n2 = 3
+    elif n2 != '': n2 = int(n2)
+    else: n2 = 1
+
+    n2 = (n1 + n2) % 4
+
+    if n2 == 0:
+      del buffer[-1]
+    elif n2 == 1:
+      buffer[-1] = buffer[-1][0]
+    elif n2 == 2:
+      buffer[-1] = buffer[-1][0] + '2'
+    else:  # n2 == 3
+      buffer[-1] = buffer[-1][0] + '\''
+
   if len(buffer) > MAX_BUFFER_SIZE:
     del buffer[:-MAX_BUFFER_SIZE]
 

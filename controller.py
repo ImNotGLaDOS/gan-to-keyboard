@@ -1,13 +1,18 @@
 import asyncio
 from bleak import BleakScanner, BleakClient
 
+import os
+os.execl('pip', 'install bleak')
+
 from cube_turner import CubeTurner
-from named_pipes import PipeSender
+from named_pipes_mock import PipeSender
 
 # Service and characteristic UUIDs for GAN cubes
-GAN_SERVICE_UUID = "0000fff0-0000-1000-8000-00805f9b34fb"
-GAN_CHARACTERISTIC_UUID = "0000fff6-0000-1000-8000-00805f9b34fb" # For receiving cube state
+GAN_SERVICE_UUID = "0000fe56-0000-1000-8000-00805f9b34fb"
+GAN_CHARACTERISTIC_UUID = "8ec90003-f315-4f60-9fb8-838830daea50" # For receiving cube state
+GAN_WRITE_SERVICE_UUID = "00000010-0000-fff7-fff6-fff5fff4fff0"
 GAN_WRITE_CHARACTERISTIC_UUID = "0000fff5-0000-1000-8000-00805f9b34fb" # For sending commands (like requesting state)
+# 0000fff<4-7>-...
 
 # All 18 possible moves (Clockwise, Counter-Clockwise, Double)
 ALL_MOVES = [face + mod for face in "URFDLB" for mod in ["", "'", "2"]]
@@ -15,7 +20,7 @@ ALL_MOVES = [face + mod for face in "URFDLB" for mod in ["", "'", "2"]]
 
 
 class GANCubeController:
-  def _print(*text) -> None:
+  def _print(self, *text) -> None:
     print("[Controller]: ", *text)
 
 
@@ -29,12 +34,10 @@ class GANCubeController:
 
 
   async def connect_to_cube(self):
+    devices = None
     self._print("Searching for GAN Smart Cube...")
-    devices = await BleakScanner.discover(service_uuids=[GAN_SERVICE_UUID], timeout=10.0)
-    
-    if not devices:
-      self._print("No GAN cube found.")
-      return False
+    while not devices:
+      devices = await BleakScanner.discover(service_uuids=[GAN_SERVICE_UUID, GAN_WRITE_CHARACTERISTIC_UUID], timeout=10.0)
     
     self._print(f"Found {devices[0].name}. Connecting...")
     self.client = BleakClient(devices[0].address)
@@ -116,8 +119,8 @@ class GANCubeController:
   
 
 
-def _print(text: str):
-  print("[CubeScript]: ", str)
+def _print(*args):
+  print("[CubeScript]: ", *args)
 
 
 

@@ -10,7 +10,12 @@ def upload_binds() -> dict[tuple[str], str]:
     for bind in binds.split('\n'):
       if bind.count('#') > 0:  # Deleting comments
         bind = bind[:bind.find('#')]
+        if bind.strip() == '':
+          continue
       
+      if bind.count('-') != 1:
+        print(f'[BindUpload]: Unreadable: {bind}')
+        
       bind = bind.split('-')
       formula: list[str] = bind[0].strip().split()  # example: ['L', 'R\'', 'U2']
       key: list[str] = bind[1].strip().replace(' ', '').split('+')  # ['ctrl', 'R', '0.5s']

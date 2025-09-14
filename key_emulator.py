@@ -98,8 +98,18 @@ class KeyEmulator:
       win32api.keybd_event(key, 0, win32con.KEYEVENTF_KEYUP, 0)
 
 
+def _print(*text):
+  print('[KeyEmlator]:', *text)  # Intentional misspell
+
+
 def trim_buffer(buffer: list[str]) -> None:
-  while len(buffer) > 1 and buffer[-1][0] == buffer[-2][0]:
+  while (len(buffer) > 1 and buffer[-1][0] == buffer[-2][0]) or \
+        (len(buffer) > 0 and buffer[-1][0] not in 'ULFRBD'):
+    if buffer[-1][0] not in 'ULFRBD':  # Something unwanted (like 'lol')
+      _print(f'Got strange thing: {buffer[-1]}. Deleting it')
+      del buffer[-1]
+      continue
+
     n1 = buffer[-1][1:]
     if n1 == '\'': n1 = 3
     elif n1 != '': n1 = int(n1)
@@ -127,7 +137,6 @@ def trim_buffer(buffer: list[str]) -> None:
 
 
 def main():
-  print('[KeyEmlater]: Starting...')
   binds = upload_binds()
   key_emulator = KeyEmulator(binds)
 
@@ -140,7 +149,7 @@ def main():
     if pipe.read(buffer):
       trim_buffer(buffer)
       key_emulator.process_buffer(buffer)
-      print('[KeyEmlator]: current buffer - ', buffer)
+      _print('Current buffer (only last 5) - ', buffer[-5:])
 
 
 if __name__ == "__main__":

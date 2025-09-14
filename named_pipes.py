@@ -28,12 +28,12 @@ class PipeSender:
 
 
   def send(self, moves: list[str]) -> None:
-    self._print('Sending moves:', moves)
+    # self._print('Sending moves:', moves)
     if not self.pipe:
       self._print("Cannot send moves, pipe is not connected.")
       return
     
-    data = ( ' '.join(moves) + ' ' ).encode('utf-8')
+    data = ( ';'.join(moves) + ';' ).encode('utf-8')
     try:
       win32file.WriteFile(self.pipe, data)
     except Exception as e:
@@ -85,10 +85,10 @@ class PipeReader:
       if win32pipe.PeekNamedPipe(self.pipe, 0)[1] == 0:
         return False
       data = win32file.ReadFile(self.pipe, 65536)
-      data = data[1].decode('utf-8').strip().split(' ')
-      data = ''.join(data)
-      buffer.append(data)
-      self._print(f'Read: {data}')
+      data = data[1].decode('utf-8').strip(';').split(';')
+      # data = ''.join(data)
+      buffer.extend(data)
+      # self._print(f'Read: "{data}"')
       return True
     except win32file.error as e:
       if e.winerror == 232:  # EOF

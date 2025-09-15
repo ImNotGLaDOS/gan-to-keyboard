@@ -146,6 +146,7 @@ def main():
   buffer: list[str] = []  # global buffer of moves
 
   while True:
+    _print('Still alive')
     if pipe.read(buffer):
       trim_buffer(buffer)
       key_emulator.process_buffer(buffer)

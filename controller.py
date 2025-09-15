@@ -40,11 +40,7 @@ class GANCubeController:
     # self._print(f'Found devices: {devices}')
     devices = [device for device in devices if device.name and 'GAN' in device.name]
     if not devices:
-      wait_time = 2
-      self._print(f'Cube not found. It should blink white. Try do (U4)x5')
-      self._print(f'Trying again in {wait_time} seconds')
-      sleep(wait_time)
-      return await self.connect_to_cube()
+      return False
 
     self._print(f"Found {devices[0].name}. Connecting...")
     self.client = BleakClient(devices[0].address)
@@ -78,7 +74,7 @@ class GANCubeController:
           self._print(f'current state: {current_state.state}')
           self._print(f'simulated state: {self.simulated.state}')
         self.last_state = current_state
-        self.simulated = CubeTurner(init_state=current_state)
+        self.simulated = CubeTurner(init_state=current_state.state)
 
         # Guessing moves independed from notation-move data
         # if self.last_state:
@@ -176,8 +172,11 @@ async def main():
   controller = GANCubeController(pipe)
   
   try:
-    if not await controller.connect_to_cube():
-      return
+    while not await controller.connect_to_cube():
+      wait_time = 2
+      controller._print(f'Cube not found. It should blink white. Try do (U4)x5')
+      controller._print(f'Trying again in {wait_time} seconds')
+      await asyncio.sleep(wait_time)
     _print("Cube connected. Waiting for moves... Press Ctrl+C to exit.")
     # await controller.client.write_gatt_char(GAN_WRITE_CHARACTERISTIC_UUID, Encrypt(b'\xd2\x0d\x05\x39\x77\x00\x00\x01\x23\x45\x67\x89\xab\x00\x00\x00\x00\x00\x00\x00'))
     # _print("Reseted.")
@@ -185,7 +184,8 @@ async def main():
     # Keep the script alive while connected
     while controller.connected and controller.client.is_connected:
       # await controller.client.write_gatt_char(GAN_WRITE_CHARACTERISTIC_UUID, Encrypt(b'\xdf\x03' + b'\x00' * 18), response=True)
-      await asyncio.sleep(1)
+      _print("Still alive")
+      await asyncio.sleep(2)
           
   except KeyboardInterrupt:
     _print("\nDisconnecting...")

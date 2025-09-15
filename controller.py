@@ -84,7 +84,7 @@ class GANCubeController:
       await self.client.start_notify(self.NOTIFY_UUID, self._notification_handler_gen4)
     
     # Request the initial state from the cube
-    # await self.client.write_gatt_char(self.WRITE_UUID, self.cryptor.encrypt(b'\x05' + b'\x00' * 19), response=True)
+    await self.client.write_gatt_char(self.WRITE_UUID, self.cryptor.encrypt(b'\x05' + b'\x00' * 19), response=True)
 
     self.connected = True
     self._print(f"Connected to {devices[0].name} ({devices[0].address})")

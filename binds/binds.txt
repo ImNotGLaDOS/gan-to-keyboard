@@ -1,5 +1,0 @@
-U - U
-U' - shift+U
-L - L
-L' - shift+L
-R U R' U' - ctrl+C

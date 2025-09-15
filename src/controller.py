@@ -34,12 +34,7 @@ class GANCubeController:
     self.logger = logging.getLogger('Controller')
 
     self.client = None
-    self.connected = False
     self.pipe = pipe
-
-    # Initialize state to the solved state
-    self.simulated = CubeTurner()
-    self.last_state = None
 
     self.protocol = None  # Gen2, Gen3, Gen4
     self.move_count = 0

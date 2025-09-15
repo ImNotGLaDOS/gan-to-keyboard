@@ -20,7 +20,6 @@ def upload_binds() -> dict[tuple[str], str]:
           continue
       
       if bind.count('-') != 1:
-        # print(f'[BindUpload]: Unreadable: {bind}')
         logger.warning(f'Unreadable bind: {bind}')
         
       bind = bind.split('-')

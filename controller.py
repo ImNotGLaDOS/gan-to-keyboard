@@ -28,7 +28,7 @@ class GANCubeController:
     self.connected = False
     self.pipe = pipe
 
-    # Initialize state to the solved state [corners, edges]
+    # Initialize state to the solved state
     self.simulated = CubeTurner()
     self.last_state = None
 
@@ -73,8 +73,10 @@ class GANCubeController:
     
       elif data[0] == 0xed:  # State as {cp, co, ep, eo}
         current_state = self._parse_cube_data(data)
-        if current_state != self.simulated.state:
+        if current_state.state != self.simulated.state:
           self._print('Missed some turns!!!')
+          self._print(f'current state: {current_state.state}')
+          self._print(f'simulated state: {self.simulated.state}')
         self.last_state = current_state
         self.simulated = CubeTurner(init_state=current_state)
 
@@ -126,7 +128,6 @@ class GANCubeController:
     eo.append((2 - (sum(eo) % 2)) % 2)
 
     state = {'cp': cp, 'co': co, 'ep': ep, 'eo': eo}
-    orig = CubeTurner(scramble='R')
     return CubeTurner(init_state=state)
     
 

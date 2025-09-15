@@ -1,4 +1,5 @@
 import win32pipe, win32file
+import logging
 from time import sleep
 
 class PipeSender:
@@ -6,13 +7,11 @@ class PipeSender:
     self.pipe_name = pipe_name
     self.pipe = None
 
-
-  def _print(self, *text) -> None:
-    print("[PipeSender]: ", *text)
+    self.logger = logging.getLogger('PipeSender')
 
 
   def connect(self):
-    self._print(f"Waiting for a client to connect to pipe {self.pipe_name}...")
+    self.logger.debug(f"Connecting to pipe...")
 
     # Create the named pipe
     pipe_handle = win32pipe.CreateNamedPipe(
@@ -24,21 +23,20 @@ class PipeSender:
     # This call blocks until a client connects
     win32pipe.ConnectNamedPipe(pipe_handle, None)
     self.pipe = pipe_handle
-    self._print("Pipe client connected.")
+    self.logger.debug("Pipe client connected.")
 
 
   def send(self, moves: list[str]) -> None:
-    # self._print('Sending moves:', moves)
+    self.logger.debug(f'Sending moves: {moves}')
     if not self.pipe:
-      self._print("Cannot send moves, pipe is not connected.")
+      self.logger.critical("Cannot send moves, pipe is not connected.")
       return
     
     data = ( ';'.join(moves) + ';' ).encode('utf-8')
     try:
       win32file.WriteFile(self.pipe, data)
     except Exception as e:
-      self._print(f"Failed to write to pipe: {e}")
-      # Potentially handle pipe disconnection here
+      self.logger.critical(f"Failed to write to pipe: {e}")
       self.pipe = None
   
 
@@ -52,13 +50,11 @@ class PipeReader:
     self.pipe_name = pipe_name
     self.pipe = None
 
-
-  def _print(self, *text) -> None:
-    print("[PipeReader]: ", *text)
+    self.logger = logging.getLogger('PipeReader')
 
 
   def connect(self):
-    self._print(f"Waiting for a client to connect to pipe {self.pipe_name}...")
+    self.logger.debug(f"Waiting for a client to connect to pipe {self.pipe_name}...")
     sleep(2)  # Wait for the pipe to be created
     
     # Create the named pipe
@@ -73,7 +69,7 @@ class PipeReader:
                   )
     
     self.pipe = pipe_handle
-    self._print("Pipe client connected.")
+    self.logger.debug("Pipe client connected.")
 
 
   def read(self, buffer: list[str]) -> bool:
@@ -86,10 +82,10 @@ class PipeReader:
         return False
       data = win32file.ReadFile(self.pipe, 65536)
       data = data[1].decode('utf-8').strip(';').split(';')
-      # data = ''.join(data)
       buffer.extend(data)
-      # self._print(f'Read: "{data}"')
+      self.logger.debug(f'Read: "{data}"')
       return True
     except win32file.error as e:
       if e.winerror == 232:  # EOF
+        self.logger.debug(f'Recieved EOF')
         return False

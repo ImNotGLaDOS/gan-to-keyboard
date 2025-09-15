@@ -2,6 +2,7 @@ import asyncio
 from time import sleep
 from copy import deepcopy
 from bleak import BleakScanner, BleakClient
+import logging
 
 from cube_turner import CubeTurner
 from named_pipes import PipeSender
@@ -9,10 +10,6 @@ from cryptor import Cryptor
 from uuids_list import UUIDS_LIST
 
 
-
-# Cube UUID (for GAN12 ui Maglev. You can try use uuids_finder.py to find your cube's uuids
-# GAN_NOTIFY_CHARACTERISTIC_UUID = "0000fff6-0000-1000-8000-00805f9b34fb"
-# GAN_WRITE_CHARACTERISTIC_UUID = "0000fff5-0000-1000-8000-00805f9b34fb"
 
 # All 18 possible moves (Clockwise, Counter-Clockwise, Double)
 ALL_MOVES = [face + mod for face in "URFDLB" for mod in ["", "'", "2"]]
@@ -26,20 +23,16 @@ def _choose_protocol(client: BleakClient) -> tuple[str, str]:
   
   for gen in 'Gen2', 'Gen3', 'Gen4':
     if UUIDS_LIST[gen]['notify'] in uuids_list:
-      print(f'[UUIDfinder]: chose protocol {gen}')
       return gen
   
-  print(f'[UUIDfinder]: couldn\'t find right protocol')
   return None
 
 
 
 class GANCubeController:
-  def _print(self, *text) -> None:
-    print("[Controller]: ", *text)
-
-
   def __init__(self, pipe: PipeSender):
+    self.logger = logging.getLogger('Controller')
+
     self.client = None
     self.connected = False
     self.pipe = pipe
@@ -53,23 +46,24 @@ class GANCubeController:
 
 
   async def connect_to_cube(self):
-    self._print("Searching for GAN Smart Cube...")
+    self.logger.info("Searching for GAN Smart Cube...")
     devices = await BleakScanner.discover(timeout=5.0)
     devices = [device for device in devices if device.name and 'GAN' in device.name]
     if not devices:
       return False
 
-    self._print(f"Found {devices[0].name}. Connecting...")
+    self.logger.info(f"Found {devices[0].name}. Connecting...")
     self.client = BleakClient(devices[0].address)
     await self.client.connect()
 
     # Choosing right protocol
     self.protocol = _choose_protocol(self.client)
     if not self.protocol:
-      self._print("Unknown protocol. Disconnecting...")
+      self.logger.critical("Unknown protocol. Disconnecting...")
       self.client.disconnect()
       return False
     else:
+      self.logger.info(f'Choosed protocol: {self.protocol}')
       self.NOTIFY_UUID = UUIDS_LIST[self.protocol]['notify']
       self.WRITE_UUID = UUIDS_LIST[self.protocol]['write']
       
@@ -84,7 +78,7 @@ class GANCubeController:
       await self.client.start_notify(self.NOTIFY_UUID, self._notification_handler_gen4)
     
     self.connected = True
-    self._print(f"Connected to {devices[0].name} ({devices[0].address})")
+    self.logger.info(f"Connected to {devices[0].name} ({devices[0].address})")
     return True
   
 
@@ -94,14 +88,15 @@ class GANCubeController:
     
     try:
       if data[0] == 0x01:  # Last move in notation
+        self.logger.debug(f'Got move data: {data.hex()}')
         move = self._parce_move_gen4(data)
+        self.logger.debug(f'Parced move: {move}')
         self.pipe.send([move])
       else:
-        # self._print(f'Got unknown notification: {data.hex()}')
-        pass
+        self.logger.debug(f'Got unknown notification: {data.hex()}')
         
     except Exception as e:
-      self._print(f"Error processing cube data: {e}")
+      self.logger.critical(f"Error processing cube data: {e}")
 
 
   def _notification_handler_gen3(self, sender, data: bytearray):
@@ -112,14 +107,15 @@ class GANCubeController:
         return
 
       if data[1] == 0x01:  # Last move in notation
+        self.logger.debug(f'Got move data: {data.hex()}')
         move = self._parce_moves_gen3(data)
-        self.pipe.send(move)
+        self.logger.debug(f'Parced move: {move}')
+        self.pipe.send([move])
       else:
-        # self._print(f'Got unknown notification: {data.hex()}')
-        pass
+        self.logger.debug(f'Got unknown notification: {data.hex()}')
         
     except Exception as e:
-      self._print(f"Error processing cube data: {e}")
+      self.logger.critical(f"Error processing cube data: {e}")
 
 
   def _notification_handler_gen2(self, sender, data: bytearray):
@@ -127,14 +123,15 @@ class GANCubeController:
     
     try:
       if data[0] & 0x0f == 0x02:  # Last move in notation
-        move = self._parce_moves_gen2(data)
-        self.pipe.send(move)
+        self.logger.debug(f'Got move data: {data.hex()}')
+        moves = self._parce_moves_gen2(data)
+        self.logger.debug(f'Parced moves: {moves}')
+        self.pipe.send(moves)
       else:
-        # self._print(f'Got unknown notification: {data.hex()}')
-        pass
+        self.logger.debug(f'Got unknown notification: {data.hex()}')
         
     except Exception as e:
-      self._print(f"Error processing cube data: {e}")
+      self.logger.critical(f"Error processing cube data: {e}")
 
 
   ###########################       Data parcers       ###########################
@@ -169,24 +166,31 @@ class GANCubeController:
     sended_count = min(move_count - self.move_count)
     self.move_count = move_count
     if sended_count <= 0:
-      self._print('Not positive sended_count')
+      self.logger.warning('Not positive sended_count')
+      return []
 
     ret = []
-    while sended_count >= 0:
-      direction = int(getBitWord(array, 64, 2))
-      face = [1, 5, 3, 0, 4, 2][int(getBitWord(array, 12 + 5 * sended_count, 4), 2)]
-      
+    i = sended_count - 1
+    while i >= 0:
+      direction = int(getBitWord(array, 16 + 5 * i, 1))
+      face = [1, 5, 3, 0, 4, 2][int(getBitWord(array, 12 + 5 * i, 4), 2)]
       ret.append(('URFDLB'[face] + ' \''[direction]).replace(' ', ''))
+
+      i -= 1
     return ret
 
 
 
-def _print(*args):
-  print("[CubeScript]: ", *args)
-
-
+logger = logging.getLogger('CubeScript')
 
 async def main():
+  # Configuring logging
+  logging.basicConfig(
+      level=logging.INFO,
+      format='%(asctime)s - [%(name)s] - %(levelname)s - %(message)s',
+      datefmt='%H:%M:%S'
+  )
+
   pipe = PipeSender()
   pipe.connect()
 
@@ -195,26 +199,25 @@ async def main():
   try:
     while not await controller.connect_to_cube():
       wait_time = 2
-      controller._print(f'Cube not found. It should blink white. Try do (U4)x5')
-      controller._print(f'Trying again in {wait_time} seconds')
+      controller.logger.warning(f'Cube not found. It should blink white. Try do (U4)x5')
+      controller.logger.warning(f'Trying again in {wait_time} seconds')
       await asyncio.sleep(wait_time)
-    _print("Cube connected. Waiting for moves... Press Ctrl+C to exit.")
+    logger.info("Cube connected. Waiting for moves... Press Ctrl+C to exit.")
 
     # Keep the script alive while connected
     while controller.connected and controller.client.is_connected:
-      _print("Still alive")
       await asyncio.sleep(2)
           
   except KeyboardInterrupt:
-    _print("\nDisconnecting...")
+    logger.info("\nDisconnecting...")
 
   except Exception as e:
-    _print(f"An error occurred: {e}")
+    logger.critical(f"An error occurred: {e}")
 
   finally:
-    if controller.client and controller.client.is_connected:
+    if controller.client:
       await controller.client.disconnect()
-      _print("Disconnected from cube.")
+    logger.critical("Disconnected from cube.")
 
 
 if __name__ == "__main__":
@@ -225,4 +228,4 @@ if __name__ == "__main__":
     import traceback
     traceback.print_exc()
   finally:
-    _print('Ended')
+    logger.debug('Ended')

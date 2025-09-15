@@ -1,5 +1,5 @@
 import win32con, win32api
-import time, string
+import logging, time, string
 
 from bind_reader import upload_binds
 from named_pipes import PipeReader
@@ -12,12 +12,8 @@ DELETE_MODE = ['flush', 'postfix', 'keep'][0]
 
 class KeyEmulator:
   def __init__(self, bind_list: dict[tuple[str], str]):
+    self.logger = logging.getLogger('KeyEmulator')
     self.bind_list = bind_list
-    self._print("Created")
-
-
-  def _print(self, *text) -> None:
-    print("[KeyEmlator]: ", *text)
 
 
   def process_buffer(self, buffer: list[str]) -> None:
@@ -41,7 +37,8 @@ class KeyEmulator:
         elif DELETE_MODE == 'keep':
           pass  # NOT TESTED
         else:
-          self._print(f'Invalid DELETE_MODE: {DELETE_MODE}')
+          self.logger.warning(f'Invalid DELETE_MODE: {DELETE_MODE}. Switching to \'flush\'')
+          DELETE_MODE = 'flush'
 
         return ret
     return None
@@ -81,11 +78,10 @@ class KeyEmulator:
         try:
           hold_time = float(subkey[:-1])
         except ValueError:
-          self._print(f"Invalid hold time: {subkey}")
+          self.logger.warning(f"Invalid hold time: {subkey}")
 
       else:
-        self._print("How should I encode " + subkey + '?!')
-        # assert False
+        self.logger.warning(f'Unrecognisible key: {subkey}')
 
     return ret, hold_time
 
@@ -101,44 +97,13 @@ class KeyEmulator:
       win32api.keybd_event(key, 0, win32con.KEYEVENTF_KEYUP, 0)
 
 
-def _print(*text):
-  print('[KeyEmlator]:', *text)  # Intentional misspell
+logger = logging.getLogger('KeyScript')
 
 
 def trim_buffer(buffer: list[str]) -> None:
-  """
-  while (len(buffer) > 1 and buffer[-1][0] == buffer[-2][0]) or \
-        (len(buffer) > 0 and buffer[-1][0] not in 'ULFRBD'):
-    if buffer[-1][0] not in 'ULFRBD':  # Something unwanted (like 'lol')
-      _print(f'Got strange thing: {buffer[-1]}. Deleting it')
-      del buffer[-1]
-      continue
-
-    n1 = buffer[-1][1:]
-    if n1 == '\'': n1 = 3
-    elif n1 != '': n1 = int(n1)
-    else: n1 = 1
-    del buffer[-1]
-    
-    n2 = buffer[-1][1:]
-    if n2 == '\'': n2 = 3
-    elif n2 != '': n2 = int(n2)
-    else: n2 = 1
-
-    n2 = (n1 + n2) % 4
-
-    if n2 == 0:
-      del buffer[-1]
-    elif n2 == 1:
-      buffer[-1] = buffer[-1][0]
-    elif n2 == 2:
-      buffer[-1] = buffer[-1][0] + '2'
-    else:  # n2 == 3
-      buffer[-1] = buffer[-1][0] + '\''
-  """
   while len(buffer) > 0:
     if buffer[-1][0] not in 'ULFRBD':
-      _print(f'Strange thing in buffer: {buffer[-1]}. Deleting it')
+      logger.warning(f'Strange thing in buffer: {buffer[-1]}. Deleting it')
       del buffer[-1]
       continue
 
@@ -172,6 +137,13 @@ def trim_buffer(buffer: list[str]) -> None:
 
 
 def main():
+  # Configuring logger
+  logging.basicConfig(
+      level=logging.INFO,
+      format='%(asctime)s - [%(name)s] - %(levelname)s - %(message)s',
+      datefmt='%H:%M:%S'
+  )
+
   binds = upload_binds()
   key_emulator = KeyEmulator(binds)
 
@@ -184,7 +156,7 @@ def main():
     if pipe.read(buffer):
       trim_buffer(buffer)
       key_emulator.process_buffer(buffer)
-      _print('Current buffer (only last 10) - ', buffer[-10:])
+      logger.info(f'Current buffer (only last 10) - {buffer[-10:]}')
 
 
 if __name__ == "__main__":

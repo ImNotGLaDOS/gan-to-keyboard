@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-
-
 #Grabbed from https://github.com/Alex-Beng/PySmartCubeGenshin
 
 

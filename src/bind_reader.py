@@ -1,3 +1,8 @@
+import logging
+
+
+logger = logging.getLogger('Bind_Uploader')
+
 def upload_binds() -> dict[tuple[str], str]:
   """
   loads binds from binds.txt
@@ -15,7 +20,8 @@ def upload_binds() -> dict[tuple[str], str]:
           continue
       
       if bind.count('-') != 1:
-        print(f'[BindUpload]: Unreadable: {bind}')
+        # print(f'[BindUpload]: Unreadable: {bind}')
+        logger.warning(f'Unreadable bind: {bind}')
         
       bind = bind.split('-')
       formula: list[str] = bind[0].strip().split()  # example: ['L', 'R\'', 'U2']
@@ -23,5 +29,5 @@ def upload_binds() -> dict[tuple[str], str]:
 
       ret[tuple(formula)] = key
   
-  print(f'\n[BindReader]: readed binds: {ret}')
+  logger.info(f'Readed binds: {ret}')
   return ret

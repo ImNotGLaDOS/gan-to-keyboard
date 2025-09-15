@@ -53,7 +53,7 @@ class KeyEmulator:
     generate list of codes 'win32con.VK_{}'
     """
     ret: list[tuple[int]] = []
-    hold_time: float = 0.003
+    hold_time: float = 0.01
 
     for subkey in key:
       if subkey == 'ctrl':
@@ -72,6 +72,9 @@ class KeyEmulator:
         ret.append(win32con.VK_LWIN)
 
       elif subkey in string.ascii_uppercase:
+        ret.append(ord(subkey))
+
+      elif subkey in string.digits:
         ret.append(ord(subkey))
       
       elif subkey[-1] == 's' and subkey[:-1].replace('.', '').isdigit():

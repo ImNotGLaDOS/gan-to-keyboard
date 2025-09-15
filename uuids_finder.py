@@ -3,7 +3,7 @@ from typing import Set
 from bleak import BleakScanner, BleakClient
 
 # The name your cube advertises. "GAN" should be sufficient.
-TARGET_NAME = "GAN12uiM_7E26"
+TARGET_NAME = "GAN"
 
 async def main():
   """
@@ -14,10 +14,10 @@ async def main():
 
   if not device:
     print(f"Could not find a device named '{TARGET_NAME}'.")
-    print("   Please make sure your cube is charged, awake, and not connected to another device (like your phone).")
+    print("   Please make sure your cube is charged, awake (it should blink white), and not connected to another device (like your phone). Try to do (U4)x5 or (L4)x5 then relaunch the script")
     return
 
-  print(f"Found device: {device.name} ({device.address})")
+  print(f"Found device: {device.name} ({device.address}). Connecting")
 
   try:
     async with BleakClient(device.address) as client:

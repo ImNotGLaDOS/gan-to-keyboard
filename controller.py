@@ -29,7 +29,7 @@ class GANCubeController:
     self.pipe = pipe
 
     # Initialize state to the solved state [corners, edges]
-    self.state = CubeTurner()
+    self.simulated = CubeTurner()
     self.last_state = None
 
 
@@ -69,13 +69,14 @@ class GANCubeController:
       if data[0] == 0x01:  # Last move in notation
         move = self._parce_move(data)
         self.pipe.send([move])
-        self.state.apply_moves(move)
+        self.simulated.apply_moves(move)
     
       elif data[0] == 0xed:  # State as {cp, co, ep, eo}
         current_state = self._parse_cube_data(data)
-        if current_state != self.state:
+        if current_state != self.simulated.state:
           self._print('Missed some turns!!!')
         self.last_state = current_state
+        self.simulated = CubeTurner(init_state=current_state)
 
         # Guessing moves independed from notation-move data
         # if self.last_state:

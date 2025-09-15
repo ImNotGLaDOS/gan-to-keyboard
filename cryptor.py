@@ -236,7 +236,7 @@ class GanCube:
     IV = [17,3,50,40,33,1,118,39,32,149,120,20,50,18,2,67]
     
     def __init__(self, mac: str):
-        mac = list(map(int, self.mac.split(':'), [16]*6))
+        mac = list(map(int, mac.split(':'), [16]*6))
         key = [i for i in self.KEY]
         iv = [i for i in self.IV]
         for i in range(6):
@@ -266,7 +266,7 @@ class GanCube:
         return dec
     
 
-class Crypter:
+class Cryptor:
     def __init__(self, mac: str):
         self._cube = GanCube(mac)
 

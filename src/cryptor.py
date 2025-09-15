@@ -266,6 +266,7 @@ class GanCube:
         return dec
     
 
+
 class Cryptor:
     def __init__(self, mac: str):
         self._cube = GanCube(mac)

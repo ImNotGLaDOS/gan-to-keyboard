@@ -53,9 +53,7 @@ class CubeTurner:
     new_state = deepcopy(self.state)
     # Permute pieces
     for i in range(8): new_state['cp'][i] = self.state['cp'][MOVE_DEFS[move]['cp'][i]]
-    # for i in range(8): new_state['co'][i] = self.state['co'][MOVE_DEFS[move]['co'][i]]
     for i in range(12): new_state['ep'][i] = self.state['ep'][MOVE_DEFS[move]['ep'][i]]
-    # for i in range(12): new_state['eo'][i] = self.state['ep'][MOVE_DEFS[move]['eo'][i]]
     
     # Orient pieces
     for i in range(8): new_state['co'][i] = (self.state['co'][MOVE_DEFS[move]['cp'][i]] + MOVE_DEFS[move]['co'][i]) % 3

@@ -8,7 +8,8 @@ def upload_binds() -> dict[tuple[str], str]:
     binds = file.read()
 
     for bind in binds.split('\n'):
-      if bind.count('#') > 0:  # Deleting comments
+      # Deleting comments
+      if bind.count('#') > 0:
         bind = bind[:bind.find('#')]
         if bind.strip() == '':
           continue
@@ -22,5 +23,5 @@ def upload_binds() -> dict[tuple[str], str]:
 
       ret[tuple(formula)] = key
   
-  print(f'[BindReader]: readed binds: {ret}')
+  print(f'\n[BindReader]: readed binds: {ret}')
   return ret

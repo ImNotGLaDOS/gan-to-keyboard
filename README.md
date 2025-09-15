@@ -17,3 +17,7 @@ Example: `R U R' U' - win+D+0.5s  # Close all windows`
     Example: "win+shift+G+0.5s"
 4. Script do not read anything in line after "#" symbol so it could be used for comments
 
+# Credits
+Almost all information about connnection protocol were taken from https://github.com/afedotov/gan-web-bluetooth
+
+The `cryptor.py` file and some clarifications about how the whole thing works were taken from https://github.com/Alex-Beng/PySmartCubeGenshin.

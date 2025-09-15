@@ -106,6 +106,7 @@ def _print(*text):
 
 
 def trim_buffer(buffer: list[str]) -> None:
+  """
   while (len(buffer) > 1 and buffer[-1][0] == buffer[-2][0]) or \
         (len(buffer) > 0 and buffer[-1][0] not in 'ULFRBD'):
     if buffer[-1][0] not in 'ULFRBD':  # Something unwanted (like 'lol')
@@ -134,9 +135,40 @@ def trim_buffer(buffer: list[str]) -> None:
       buffer[-1] = buffer[-1][0] + '2'
     else:  # n2 == 3
       buffer[-1] = buffer[-1][0] + '\''
+  """
+  while len(buffer) > 0:
+    if buffer[-1][0] not in 'ULFRBD':
+      _print(f'Strange thing in buffer: {buffer[-1]}. Deleting it')
+      del buffer[-1]
+      continue
+
+    if len(buffer) == 1:
+      break
+
+    if buffer[-1][0] != buffer[-2][0]:
+      break
+
+    # Merge/cancel out similar turns
+    n1 = buffer[-1][1:]
+    if n1 == '\'': n1 = 3
+    elif n1 != '': n1 = int(n1)
+    else:          n1 = 1
+    
+    n2 = buffer[-1][1:]
+    if n2 == '\'': n2 = 3
+    elif n2 != '': n2 = int(n2)
+    else:          n2 = 1
+
+    del buffer[-1]
+
+    if n2 == 0:   del buffer[-1]
+    elif n2 == 1: buffer[-1] = buffer[-1][0]
+    elif n2 == 2: buffer[-1] = buffer[-1][0] + '2'
+    else:         buffer[-1] = buffer[-1][0] + '\''
 
   if len(buffer) > MAX_BUFFER_SIZE:
     del buffer[:-MAX_BUFFER_SIZE]
+    trim_buffer(buffer)
 
 
 def main():
@@ -152,7 +184,7 @@ def main():
     if pipe.read(buffer):
       trim_buffer(buffer)
       key_emulator.process_buffer(buffer)
-      _print('Current buffer (only last 5) - ', buffer[-5:])
+      _print('Current buffer (only last 10) - ', buffer[-10:])
 
 
 if __name__ == "__main__":

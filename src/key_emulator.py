@@ -6,7 +6,7 @@ from named_pipes import PipeReader
 
 
 MAX_BUFFER_SIZE = 30
-DELETE_MODE = ['flush', 'postfix', 'keep'][0]
+DELETE_MODE = ['flush', 'postfix', 'keep'][2]
 
 
 
@@ -33,12 +33,12 @@ class KeyEmulator:
         if DELETE_MODE == 'flush':
           turns.clear()
         elif DELETE_MODE == 'postfix':
-          del turns[-postfix:]  # NOT TESTED
+          del turns[-postfix:]
         elif DELETE_MODE == 'keep':
-          pass  # NOT TESTED
+          pass
         else:
-          self.logger.warning(f'Invalid DELETE_MODE: {DELETE_MODE}. Switching to \'flush\'')
-          DELETE_MODE = 'flush'
+          self.logger.warning(f'Invalid DELETE_MODE: {DELETE_MODE}.')
+          # DELETE_MODE = 'flush'
 
         return ret
     return None
@@ -119,16 +119,18 @@ def trim_buffer(buffer: list[str]) -> None:
     elif n1 != '': n1 = int(n1)
     else:          n1 = 1
     
-    n2 = buffer[-1][1:]
+    n2 = buffer[-2][1:]
     if n2 == '\'': n2 = 3
     elif n2 != '': n2 = int(n2)
     else:          n2 = 1
 
     del buffer[-1]
 
-    if n2 == 0:   del buffer[-1]
-    elif n2 == 1: buffer[-1] = buffer[-1][0]
-    elif n2 == 2: buffer[-1] = buffer[-1][0] + '2'
+    sm = (n1 + n2) % 4
+
+    if sm == 0:   del buffer[-1]
+    elif sm == 1: buffer[-1] = buffer[-1][0]
+    elif sm == 2: buffer[-1] = buffer[-1][0] + '2'
     else:         buffer[-1] = buffer[-1][0] + '\''
 
   if len(buffer) > MAX_BUFFER_SIZE:
@@ -156,7 +158,7 @@ def main():
     if pipe.read(buffer):
       trim_buffer(buffer)
       key_emulator.process_buffer(buffer)
-      logger.info(f'Current buffer (only last 10) - {buffer[-10:]}')
+      logger.info(f'Current buffer (last 10) - {buffer[-10:]}')
 
 
 if __name__ == "__main__":

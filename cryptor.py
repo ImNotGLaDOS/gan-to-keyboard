@@ -232,15 +232,11 @@ class AES:
 
 
 class GanCube:
-    # ONLY TESTED FOR GAN i3 NOW !
-    BRAND = 'GAN'
-
-    MAC = "CF:68:9E:FC:7E:26"
     KEY = [1,2,66,40,49,145,22,7,32,5,24,84,66,17,18,83]
     IV = [17,3,50,40,33,1,118,39,32,149,120,20,50,18,2,67]
     
-    def __init__(self):
-        mac = list(map(int, self.MAC.split(':'), [16]*6))
+    def __init__(self, mac: str):
+        mac = list(map(int, self.mac.split(':'), [16]*6))
         key = [i for i in self.KEY]
         iv = [i for i in self.IV]
         for i in range(6):
@@ -270,10 +266,12 @@ class GanCube:
         return dec
     
 
-def Encrypt(text):
-    cube = GanCube()
-    return bytes(cube.encrypt(bytearray(text)))
+class Crypter:
+    def __init__(self, mac: str):
+        self._cube = GanCube(mac)
 
-def Decrypt(data):
-    cube = GanCube()
-    return cube.decrypt([int(i) for i in data])
+    def encrypt(self, data):
+        return bytes(self._cube.encrypt(bytearray(data)))
+
+    def decrypt(self, data):
+        return self._cube.decrypt([int(i) for i in data])

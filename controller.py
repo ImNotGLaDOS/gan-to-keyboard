@@ -5,25 +5,13 @@ from bleak import BleakScanner, BleakClient
 
 from cube_turner import CubeTurner
 from named_pipes import PipeSender
+from cryptor import Cryptor
 
-from cryptor import Encrypt, Decrypt
 
-"""
-# Service and characteristic UUIDs for GAN cubes
-GAN_SERVICE_UUID = "00001800-0000-1000-8000-00805f9b34fb"
-GAN_CHARACTERISTIC_UUID = "8ec90003-f315-4f60-9fb8-838830daea50" # For receiving cube state
-# GAN_CHARACTERISTIC_UUID = "00002a04-0000-1000-8000-00805f9b34fb" # For receiving cube state
-GAN_WRITE_SERVICE_UUID = "00000010-0000-fff7-fff6-fff5fff4fff0"
-char_n = 7
-GAN_WRITE_CHARACTERISTIC_UUID = f"0000fff{char_n}-0000-1000-8000-00805f9b34fb" # For sending commands (like requesting state)
-# GAN_WRITE_CHARACTERISTIC_UUID = f"00002aa6-0000-1000-8000-00805f9b34fb" # For sending commands (like requesting state)
-# 0000fff<4-7>-...
-"""
-# GAN_SERVICE_UUID = "0000fff0-0000-1000-8000-00805f9b34fb"
+
+# Cube UUID (for GAN12 ui Maglev. You can try use uuids_finder.py to find your cube's uuids)
 GAN_NOTIFY_CHARACTERISTIC_UUID = "0000fff6-0000-1000-8000-00805f9b34fb"
-# GAN_NOTIFY_CHARACTERISTIC_UUID = "8ec90003-f315-4f60-9fb8-838830daea50"
 GAN_WRITE_CHARACTERISTIC_UUID = "0000fff5-0000-1000-8000-00805f9b34fb"
-# GAN_WRITE_CHARACTERISTIC_UUID = "8ec90003-f315-4f60-9fb8-838830daea50"
 
 # All 18 possible moves (Clockwise, Counter-Clockwise, Double)
 ALL_MOVES = [face + mod for face in "URFDLB" for mod in ["", "'", "2"]]
@@ -60,13 +48,14 @@ class GANCubeController:
 
     self._print(f"Found {devices[0].name}. Connecting...")
     self.client = BleakClient(devices[0].address)
+    self.cryptor = Cryptor(devices[0].address)
     await self.client.connect()
     
     # Subscribe to notifications for cube state
     await self.client.start_notify(GAN_NOTIFY_CHARACTERISTIC_UUID, self._notification_handler)
     
     # Request the initial state from the cube
-    await self.client.write_gatt_char(GAN_WRITE_CHARACTERISTIC_UUID, Encrypt(b'\x05' + b'\x00' * 19), response=True)
+    await self.client.write_gatt_char(GAN_WRITE_CHARACTERISTIC_UUID, self.cryptor.encrypt(b'\x05' + b'\x00' * 19), response=True)
 
     self.connected = True
     self._print(f"Connected to {devices[0].name} ({devices[0].address})")
@@ -74,27 +63,27 @@ class GANCubeController:
   
 
   def _notification_handler(self, sender, data: bytearray):
-    data = bytearray(Decrypt(data))
+    data = bytearray(self.cryptor.decrypt(data))
     
     try:
       if data[0] == 0x01:  # Last move in notation
         move = self._parce_move(data)
         self.pipe.send([move])
-        pass
+        self.state.apply_moves(move)
     
       elif data[0] == 0xed:  # State as {cp, co, ep, eo}
         current_state = self._parse_cube_data(data)
-        
-        # If there is a previous state, guess the move made
-        if self.last_state:
-          moves = self._guess_moves(self.last_state, current_state)
-          if moves:
+        if current_state != self.state:
+          self._print('Missed some turns!!!')
+        self.last_state = current_state
+
+        # Guessing moves independed from notation-move data
+        # if self.last_state:
+        #   moves = self._guess_moves(self.last_state, current_state)
+        #   if moves:
             # self._print(f"guessed move(s): {' '.join(moves)}")
             # self.pipe.send(moves)
-            pass
-                
-        # Update the last known state
-        self.last_state = current_state
+        #     pass
       
       else:
         # self._print(f'Got unknown notification: {data.hex()}')
@@ -102,7 +91,7 @@ class GANCubeController:
         
     except Exception as e:
       self._print(f"Error processing cube data: {e}")
-  
+
 
   def _parce_move(self, data):
     array = ''.join(format(byte, '08b') for byte in data)
@@ -169,7 +158,7 @@ class GANCubeController:
           return [move_1, move_2]
 
     # Something else?
-    return 'lol'
+    return 'not_guessed'
   
 
 
@@ -188,11 +177,8 @@ async def main():
     if not await controller.connect_to_cube():
       return
     _print("Cube connected. Waiting for moves... Press Ctrl+C to exit.")
-    await controller.client.write_gatt_char(GAN_WRITE_CHARACTERISTIC_UUID, Encrypt(b'\xd2\x0d\x05\x39\x77\x00\x00\x01\x23\x45\x67\x89\xab\x00\x00\x00\x00\x00\x00\x00'))
-    _print("Reseted.")
-    # _print(f'Cube\'s services: {controller.client.services}')
-    # _print(f'Service\'s uuid: {[i for i in controller.client.services][0].uuid}')
-    # _print(f'Service\'s characteristics: {[char.uuid for char in [i for i in controller.client.services][0].characteristics]}')
+    # await controller.client.write_gatt_char(GAN_WRITE_CHARACTERISTIC_UUID, Encrypt(b'\xd2\x0d\x05\x39\x77\x00\x00\x01\x23\x45\x67\x89\xab\x00\x00\x00\x00\x00\x00\x00'))
+    # _print("Reseted.")
 
     # Keep the script alive while connected
     while controller.connected and controller.client.is_connected:

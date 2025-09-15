@@ -6,7 +6,7 @@ from named_pipes import PipeReader
 
 
 MAX_BUFFER_SIZE = 30
-DELETE_MODE = ['flush', 'postfix', 'keep'][2]
+DELETE_MODE = ['flush', 'postfix', 'keep'][0]
 
 
 

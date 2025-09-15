@@ -25,7 +25,7 @@ def _choose_protocol(client: BleakClient) -> tuple[str, str]:
       uuids_list.append(char.uuid)
   
   for gen in 'Gen2', 'Gen3', 'Gen4':
-    if UUIDS_LIST[gen]['notice'] in uuids_list:
+    if UUIDS_LIST[gen]['notify'] in uuids_list:
       print(f'[UUIDfinder]: chose protocol {gen}')
       return gen
   
@@ -297,4 +297,11 @@ async def main():
 
 
 if __name__ == "__main__":
-  asyncio.run(main())
+  try:
+    asyncio.run(main())
+  except Exception as e:
+    print(f"Fatal error: {e}")
+    import traceback
+    traceback.print_exc()
+  finally:
+    _print('Ended')

@@ -256,7 +256,7 @@ class GanCube:
 
         iv = self.decoder.iv
         _block = self.decoder.decrypt(enc[4:])
-        dec = [_block[i] ^ iv[i]  for i in range(16)]
+        dec = [_block[i] ^ iv[i] for i in range(16)]
         _block = self.decoder.decrypt(enc[:4] + dec[:12]) 
         dec = [_block[i] ^ iv[i] for i in range(16)] + dec[12:]
         

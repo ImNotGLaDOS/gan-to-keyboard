@@ -159,7 +159,7 @@ class GANCubeController:
       return array[start: start + length]
     
     move_count = int(getBitWord(array, 4, 8), 2)
-    sended_count = min(move_count - self.move_count)
+    sended_count = min((move_count - self.move_count) & 0xff, 7)  # TODO: Figure out what "& 0xff" is for 
     self.move_count = move_count
     if sended_count <= 0:
       self.logger.warning('Not positive sended_count.')

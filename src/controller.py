@@ -26,7 +26,7 @@ def _choose_protocol(client: BleakClient) -> tuple[str, str]:
 
 
 class GANCubeController:
-  def __init__(self, send: function):
+  def __init__(self, send):
     """
     send(moves: list[str]) -> None.
     send(moves) called when controller wants to send list of recieved moves
@@ -201,7 +201,7 @@ async def main():
     logger.info("Cube connected.")
 
     # Keep the script alive while connected
-    while controller.connected and controller.client.is_connected:
+    while controller.client.is_connected:
       await asyncio.sleep(2)
           
   except KeyboardInterrupt:

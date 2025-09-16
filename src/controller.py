@@ -26,11 +26,15 @@ def _choose_protocol(client: BleakClient) -> tuple[str, str]:
 
 
 class GANCubeController:
-  def __init__(self, pipe: PipeSender):
+  def __init__(self, send: function):
+    """
+    send(moves: list[str]) -> None.
+    send(moves) called when controller wants to send list of recieved moves
+    """
     self.logger = logging.getLogger('Controller')
 
     self.client = None
-    self.pipe = pipe
+    self.send = send
 
     self.protocol = None  # Gen2, Gen3, Gen4
     self.move_count = 0
@@ -83,7 +87,7 @@ class GANCubeController:
         self.logger.debug(f'Got move data: {data.hex()}')
         move = self._parce_move_gen4(data)
         self.logger.debug(f'Parced move: {move}')
-        self.pipe.send([move])
+        self.send([move])
       else:
         self.logger.debug(f'Got unknown notification: {data.hex()}')
         
@@ -102,7 +106,7 @@ class GANCubeController:
         self.logger.debug(f'Got move data: {data.hex()}')
         move = self._parce_moves_gen3(data)
         self.logger.debug(f'Parced move: {move}')
-        self.pipe.send([move])
+        self.send([move])
       else:
         self.logger.debug(f'Got unknown notification: {data.hex()}')
         
@@ -118,7 +122,7 @@ class GANCubeController:
         self.logger.debug(f'Got move data: {data.hex()}')
         moves = self._parce_moves_gen2(data)
         self.logger.debug(f'Parced moves: {moves}')
-        self.pipe.send(moves)
+        self.send(moves)
       else:
         self.logger.debug(f'Got unknown notification: {data.hex()}')
         
@@ -186,7 +190,7 @@ async def main():
   pipe = PipeSender()
   pipe.connect()
 
-  controller = GANCubeController(pipe)
+  controller = GANCubeController(lambda lst: pipe.send(lst))
   
   try:
     while not await controller.connect_to_cube():

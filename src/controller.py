@@ -11,10 +11,6 @@ from uuids_list import UUIDS_LIST
 
 
 
-# All 18 possible moves (Clockwise, Counter-Clockwise, Double)
-ALL_MOVES = [face + mod for face in "URFDLB" for mod in ["", "'", "2"]]
-
-
 def _choose_protocol(client: BleakClient) -> tuple[str, str]:
   uuids_list = []
   for service in client.services:
@@ -41,15 +37,18 @@ class GANCubeController:
 
 
   async def connect_to_cube(self):
+    # Scanning for devices
     self.logger.info("Searching for GAN Smart Cube...")
     devices = await BleakScanner.discover(timeout=5.0)
     devices = [device for device in devices if device.name and 'GAN' in device.name]
     if not devices:
       return False
 
+    # Connecting
     self.logger.info(f"Found {devices[0].name}. Connecting...")
     self.client = BleakClient(devices[0].address)
     await self.client.connect()
+    self.logger.info(f"Connected to {devices[0].name} ({devices[0].address}).")
 
     # Choosing right protocol
     self.protocol = _choose_protocol(self.client)
@@ -72,8 +71,6 @@ class GANCubeController:
     else:  # self.protocol == 'Gen4'
       await self.client.start_notify(self.NOTIFY_UUID, self._notification_handler_gen4)
     
-    self.connected = True
-    self.logger.info(f"Connected to {devices[0].name} ({devices[0].address})")
     return True
   
 
@@ -161,7 +158,7 @@ class GANCubeController:
     sended_count = min(move_count - self.move_count)
     self.move_count = move_count
     if sended_count <= 0:
-      self.logger.warning('Not positive sended_count')
+      self.logger.warning('Not positive sended_count.')
       return []
 
     ret = []
@@ -194,17 +191,17 @@ async def main():
   try:
     while not await controller.connect_to_cube():
       wait_time = 2
-      controller.logger.warning(f'Cube not found. It should blink white. Try do (U4)x5')
-      controller.logger.warning(f'Trying again in {wait_time} seconds')
+      controller.logger.warning(f'Cube not found. It should blink white. Try do (U4)x5.')
+      controller.logger.warning(f'Trying again in {wait_time} seconds.')
       await asyncio.sleep(wait_time)
-    logger.info("Cube connected. Waiting for moves... Press Ctrl+C to exit.")
+    logger.info("Cube connected.")
 
     # Keep the script alive while connected
     while controller.connected and controller.client.is_connected:
       await asyncio.sleep(2)
           
   except KeyboardInterrupt:
-    logger.info("\nDisconnecting...")
+    logger.info("Keyboard Interrupt. Disconnecting...")
 
   except Exception as e:
     logger.critical(f"An error occurred: {e}")
@@ -223,4 +220,4 @@ if __name__ == "__main__":
     import traceback
     traceback.print_exc()
   finally:
-    logger.debug('Ended')
+    logger.debug('Ended.')

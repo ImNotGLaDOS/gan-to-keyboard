@@ -73,7 +73,7 @@ class GANCubeController:
     elif self.protocol == 'Gen3':
       await self.client.start_notify(self.NOTIFY_UUID, self._notification_handler_gen3)
     else:  # self.protocol == 'Gen4'
-      await self.client.start_notify(self.NOTIFY_UUID, self._notification_handler_gen2)  #!!!!!!!!!!!!!!!!!
+      await self.client.start_notify(self.NOTIFY_UUID, self._notification_handler_gen4)
     
     return True
   
@@ -118,12 +118,13 @@ class GANCubeController:
     data = bytearray(self.cryptor.decrypt(data))
     
     try:
-      if data[0] & 0x0f == 0x01:  #!!!!!!!!!!!!# Last move in notation
+      if data[0] & 0x0f == 0x02:  # Last move in notation
         self.logger.debug(f'Got move data: {data.hex()}')
-        if self.move_count:  # Can process moves only after getting facelets state
+        if self.move_count is not None:  # Can process moves only after getting facelets state
           moves = self._parce_moves_gen2(data)
-          self.logger.debug(f'Parced moves: {moves}')
-          self.send(moves)
+          if moves:
+            self.logger.debug(f'Parced moves: {moves}')
+            self.send(moves)
       elif data[0] & 0x0f == 0x04:  # Facelets
         self.move_count = int(data[0] >> 4)
         pass  # There can be logic of reconstucting facelets
@@ -162,11 +163,12 @@ class GANCubeController:
     def getBitWord(array, start, length):
       return array[start: start + length]
     
-    print(f'Got array: {array}')
+    print('\n\n' + '-' * 10 + ' Start of block ' + '-' * 10)
+    print(f'Got array: {data.hex(), array}')
     move_count = int(getBitWord(array, 4, 8), 2)
     sended_count = min((move_count - self.move_count) & 0xff, 7)  # TODO: Figure out what "& 0xff" is for 
     self.move_count = move_count
-    print(f'Move_count, sended_count = {move_count}, {sended_count}')
+    print(f'Move_count, self_count, sended_count = {move_count}, {self.move_count}, {sended_count}')
     if sended_count <= 0:
       self.logger.warning('Not positive sended_count.')
       return []
@@ -183,9 +185,10 @@ class GANCubeController:
       move = ('URFDLB'[face] + ' \''[direction]).replace(' ', '')
       ret.append(move)
       print(f'Got move: {move}')
-      print('')
 
       i -= 1
+    print('-' * 10 + '  End of block  ' + '-' * 10)
+    print('')
     return ret
 
 

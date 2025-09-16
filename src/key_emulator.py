@@ -53,6 +53,7 @@ class KeyEmulator:
     hold_time: float = 0.01
 
     for subkey in key:
+      subkey = subkey.casefold()
       if subkey == 'ctrl':
         ret.append(win32con.VK_CONTROL)
 
@@ -68,11 +69,17 @@ class KeyEmulator:
       elif subkey == 'win':
         ret.append(win32con.VK_LWIN)
 
-      elif subkey in string.ascii_uppercase:
+      elif len(subkey) == 1 and subkey in string.ascii_lowercase:
         ret.append(ord(subkey))
 
-      elif subkey in string.digits:
+      elif len(subkey) == 1 and subkey in string.digits:
         ret.append(ord(subkey))
+
+      elif len(subkey) >= 2 and subkey[0] == 'f' and subkey[1:].isdigit():
+        try:
+          ret.append(getattr(win32con, f'VK_F{subkey[1:]}'))
+        except ValueError:
+          self.logger.warning(f'Unrecognisable F_ key: {subkey}')
       
       elif subkey[-1] == 's' and subkey[:-1].replace('.', '').isdigit():
         try:

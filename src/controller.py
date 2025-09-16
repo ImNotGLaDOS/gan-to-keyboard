@@ -37,7 +37,7 @@ class GANCubeController:
     self.send = send
 
     self.protocol = None  # Gen2, Gen3, Gen4
-    self.move_count = 0
+    self.move_count = 0  # None
 
 
   async def connect_to_cube(self):
@@ -73,7 +73,7 @@ class GANCubeController:
     elif self.protocol == 'Gen3':
       await self.client.start_notify(self.NOTIFY_UUID, self._notification_handler_gen3)
     else:  # self.protocol == 'Gen4'
-      await self.client.start_notify(self.NOTIFY_UUID, self._notification_handler_gen4)
+      await self.client.start_notify(self.NOTIFY_UUID, self._notification_handler_gen2)  #!!!!!!!!!!!!!!!!!
     
     return True
   
@@ -118,11 +118,15 @@ class GANCubeController:
     data = bytearray(self.cryptor.decrypt(data))
     
     try:
-      if data[0] & 0x0f == 0x02:  # Last move in notation
+      if data[0] & 0x0f == 0x01:  #!!!!!!!!!!!!# Last move in notation
         self.logger.debug(f'Got move data: {data.hex()}')
-        moves = self._parce_moves_gen2(data)
-        self.logger.debug(f'Parced moves: {moves}')
-        self.send(moves)
+        if self.move_count:  # Can process moves only after getting facelets state
+          moves = self._parce_moves_gen2(data)
+          self.logger.debug(f'Parced moves: {moves}')
+          self.send(moves)
+      elif data[0] & 0x0f == 0x04:  # Facelets
+        self.move_count = int(data[0] >> 4)
+        pass  # There can be logic of reconstucting facelets
       else:
         self.logger.debug(f'Got unknown notification: {data.hex()}')
         
@@ -158,9 +162,11 @@ class GANCubeController:
     def getBitWord(array, start, length):
       return array[start: start + length]
     
+    print(f'Got array: {array}')
     move_count = int(getBitWord(array, 4, 8), 2)
     sended_count = min((move_count - self.move_count) & 0xff, 7)  # TODO: Figure out what "& 0xff" is for 
     self.move_count = move_count
+    print(f'Move_count, sended_count = {move_count}, {sended_count}')
     if sended_count <= 0:
       self.logger.warning('Not positive sended_count.')
       return []
@@ -168,9 +174,16 @@ class GANCubeController:
     ret = []
     i = sended_count - 1
     while i >= 0:
+      print(f'i = {i}')
+      print(f'direction_raw, face_raw = {getBitWord(array, 16 + 5 * i, 1)}, {getBitWord(array, 12 + 5 * i, 4)}')
       direction = int(getBitWord(array, 16 + 5 * i, 1))
       face = [1, 5, 3, 0, 4, 2][int(getBitWord(array, 12 + 5 * i, 4), 2)]
-      ret.append(('URFDLB'[face] + ' \''[direction]).replace(' ', ''))
+      print(f'direction_int, face_int = {direction}, {face}')
+      
+      move = ('URFDLB'[face] + ' \''[direction]).replace(' ', '')
+      ret.append(move)
+      print(f'Got move: {move}')
+      print('')
 
       i -= 1
     return ret

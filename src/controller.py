@@ -217,7 +217,9 @@ async def main():
     logger.info("Cube connected.")
 
     # Keep the script alive while connected
-    while controller.client.is_connected:
+    while True:
+      if not controller.client.is_connected:
+        logger.warning('Not controller.client.is_connected')
       await asyncio.sleep(2)
           
   except KeyboardInterrupt:
@@ -227,7 +229,7 @@ async def main():
     logger.critical(f"An error occurred: {e}")
 
   finally:
-    if controller.client:
+    if controller.client and controller.client.is_connected:
       await controller.client.disconnect()
     logger.critical("Disconnected from cube.")
 

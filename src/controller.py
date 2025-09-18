@@ -216,7 +216,7 @@ async def main():
       await asyncio.sleep(wait_time)
     logger.info("Cube connected.")
 
-    # Keep the script alive while connected
+    # Keep the script alive (forever)
     while True:
       if not controller.client.is_connected:
         logger.warning('Not controller.client.is_connected')

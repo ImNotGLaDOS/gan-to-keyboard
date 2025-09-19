@@ -39,7 +39,7 @@ Mind that similar moves in buffer will be merged and can cancel out each other.
 
 Remember to hold cube with the right orientation: White center piece up and green center piece front.
 
-The script do not stores the whole history of moves - only last 100 moves.
+The script do not stores the whole history of moves - only last 100 moves. Alse it clears the buffer if not receiving any moves for 10 seconds
 
 ## Advanced adjustments
 

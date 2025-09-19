@@ -160,11 +160,20 @@ def main():
 
   buffer: list[str] = []  # global buffer of moves
 
+  last_ts = time.time()
+
   while True:
     if pipe.read(buffer):
+      last_ts = time.time()
+
       trim_buffer(buffer)
       key_emulator.process_buffer(buffer)
       logger.info(f'Current buffer (last 10) - {buffer[-10:]}')
+    
+    elif time.time() - last_ts > 10 and len(buffer) != 0:
+      buffer.clear()
+      logger.info('Cleared the buffer due to inactivity. []')
+      last_ts = time.time()
 
 
 if __name__ == "__main__":

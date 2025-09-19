@@ -6,14 +6,14 @@ from named_pipes import PipeReader
 
 
 MAX_BUFFER_SIZE = 30
-DELETE_MODE = ['flush', 'postfix', 'keep'][0]
 
 
 
 class KeyEmulator:
-  def __init__(self, bind_list: dict[tuple[str], str]):
+  def __init__(self, bind_list: dict[tuple[str], str], delete_mode='flush'):
     self.logger = logging.getLogger('KeyEmulator')
     self.bind_list = bind_list
+    self.delete_mode = delete_mode
 
 
   def process_buffer(self, buffer: list[str]) -> None:
@@ -30,15 +30,15 @@ class KeyEmulator:
       if tuple(turns[-postfix:]) in self.bind_list.keys():
         ret = self.bind_list[tuple(turns[-postfix:])]
 
-        if DELETE_MODE == 'flush':
+        if self.delete_mode == 'flush':
           turns.clear()
-        elif DELETE_MODE == 'postfix':
+        elif self.delete_mode == 'postfix':
           del turns[-postfix:]
-        elif DELETE_MODE == 'keep':
+        elif self.delete_mode == 'keep':
           pass
         else:
-          self.logger.warning(f'Invalid DELETE_MODE: {DELETE_MODE}.')
-          # DELETE_MODE = 'flush'
+          self.logger.warning(f'Invalid DELETE_MODE: {self.delete_mode}. Switching to \'flush\'...')
+          self.delete_mode = 'flush'
 
         return ret
     return None
@@ -153,8 +153,7 @@ def main():
       datefmt='%H:%M:%S'
   )
 
-  binds = upload_binds()
-  key_emulator = KeyEmulator(binds)
+  key_emulator = KeyEmulator(*upload_binds())  # Init with binds and del_mode
 
   pipe = PipeReader()
   pipe.connect()

@@ -3,12 +3,13 @@ import logging
 
 logger = logging.getLogger('Bind_Uploader')
 
-def upload_binds() -> dict[tuple[str], str]:
+def upload_binds() -> tuple[ dict[tuple[str], str], str ]:
   """
   loads binds from binds.txt
-  ret: dict[<formula>, <key bind>]
+  ret: dict[<formula>, <key bind>], DELETE_MODE ['keep', 'postfix', 'flush']
   """
   ret: dict[tuple[str], str] = {}
+  DELETE_MODE = 'flush'
   with open('binds.txt') as file:
     binds = file.read()
 
@@ -18,6 +19,13 @@ def upload_binds() -> dict[tuple[str], str]:
         bind = bind[:bind.find('#')]
         if bind.strip() == '':
           continue
+      
+      if bind[1] == '!':
+        bind = bind[1:].strip()
+        if bind not in ['keep', 'postfix', 'flush']:
+          logger.warning(f'Not valid delete_mode: {bind}')
+        else: DELETE_MODE = bind
+        continue
       
       if bind.count('-') != 1:
         logger.warning(f'Unreadable bind: {bind}')
@@ -29,4 +37,5 @@ def upload_binds() -> dict[tuple[str], str]:
       ret[tuple(formula)] = key
   
   logger.info(f'Readed binds: {ret}')
-  return ret
+  logger.info(f'Deletion mode: {DELETE_MODE}')
+  return ret, DELETE_MODE

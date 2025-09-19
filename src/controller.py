@@ -1,10 +1,7 @@
 import asyncio
-from time import sleep
-from copy import deepcopy
 from bleak import BleakScanner, BleakClient
 import logging
 
-from cube_turner import CubeTurner
 from named_pipes import PipeSender
 from cryptor import Cryptor
 from uuids_list import UUIDS_LIST
@@ -37,7 +34,7 @@ class GANCubeController:
     self.send = send
 
     self.protocol = None  # Gen2, Gen3, Gen4
-    self.move_count = 0  # None
+    self.move_count = None
 
 
   async def connect_to_cube(self):
@@ -120,11 +117,12 @@ class GANCubeController:
     try:
       if data[0] & 0x0f == 0x02:  # Last move in notation
         self.logger.debug(f'Got move data: {data.hex()}')
-        if self.move_count is not None:  # Can process moves only after getting facelets state
-          moves = self._parce_moves_gen2(data)
-          if moves:
-            self.logger.debug(f'Parced moves: {moves}')
-            self.send(moves)
+        if self.move_count is None:  # Can process moves only after getting facelets state
+          return
+        moves = self._parce_moves_gen2(data)
+        if moves:
+          self.logger.debug(f'Parced moves: {moves}')
+          self.send(moves)
       elif data[0] & 0x0f == 0x04:  # Facelets
         self.move_count = int(data[0] >> 4)
         pass  # There can be logic of reconstucting facelets

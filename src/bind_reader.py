@@ -20,7 +20,7 @@ def upload_binds() -> tuple[ dict[tuple[str], str], str ]:
         if bind.strip() == '':
           continue
       
-      if bind[1] == '!':
+      if bind[0] == '!':
         bind = bind[1:].strip()
         if bind not in ['keep', 'postfix', 'flush']:
           logger.warning(f'Not valid delete_mode: {bind}')

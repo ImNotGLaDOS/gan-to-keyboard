@@ -70,7 +70,7 @@ class KeyEmulator:
         ret.append(win32con.VK_LWIN)
 
       elif len(subkey) == 1 and subkey in string.ascii_lowercase:
-        ret.append(ord(subkey))
+        ret.append(ord(subkey.capitalize()))
 
       elif len(subkey) == 1 and subkey in string.digits:
         ret.append(ord(subkey))

@@ -5,7 +5,7 @@ from bind_reader import upload_binds
 from named_pipes import PipeReader
 
 
-MAX_BUFFER_SIZE = 30
+MAX_BUFFER_SIZE = 100
 
 
 

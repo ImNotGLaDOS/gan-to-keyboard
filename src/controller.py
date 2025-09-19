@@ -64,7 +64,7 @@ class GANCubeController:
       
     self.cryptor = Cryptor(devices[0].address)
     
-    # Subscribe to notifications for cube state
+    # Subscribe to notifications
     if self.protocol == 'Gen2':
       await self.client.start_notify(self.NOTIFY_UUID, self._notification_handler_gen2)
     elif self.protocol == 'Gen3':

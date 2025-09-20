@@ -1,3 +1,6 @@
+import sys
+sys.coinit_flags = 0  # MTA thread mode
+
 import asyncio
 from bleak import BleakScanner, BleakClient
 import logging
@@ -47,7 +50,7 @@ class GANCubeController:
 
     # Connecting
     self.logger.info(f"Found {devices[0].name}. Connecting...")
-    self.client = BleakClient(devices[0].address)
+    self.client = BleakClient(devices[0])
     await self.client.connect()
     self.logger.info(f"Connected to {devices[0].name} ({devices[0].address}).")
 

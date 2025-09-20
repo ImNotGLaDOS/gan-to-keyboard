@@ -1,0 +1,39 @@
+# Binds for emulating 4x4x4 on https://virtual-cube.net
+ 
+! DELETION FLUSH  # FLUSH or POSTFIX or KEEP
+! IDLE_TIME 10
+
+# Regular moves
+F U - J   # U
+F U' - F  # U'
+F R - I   # R
+F R' - K  # R'
+F L - D   # L
+F L' - E  # L'
+F B - W   # B
+F B' - O  # B'
+F D - S   # D
+F D' - L  # D'
+
+# Wide moves
+F' U - comma   # Uw
+F' U' - C      # Uw'
+F' R - U       # Rw
+F' R' - M      # Rw'
+F' L - V       # Lw
+F' L' - R      # Lw'
+F' D - Z       # Dw
+F' D' - slash  # Dw'
+# Bw and Fw is not presented
+
+# Rotations
+F2 D - right  # y'
+F2 D' - left  # y
+F2 R - up     # x
+F2 R' - down  # x'
+F2 B - Q      # z'
+F2 B' - P     # z
+
+# F moves
+F2 U - H   # F
+F2 U' - G  # F'

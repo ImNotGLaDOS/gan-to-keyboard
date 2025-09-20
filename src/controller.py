@@ -217,7 +217,8 @@ async def main():
     # Keep the script alive (forever)
     while True:
       if not controller.client.is_connected:
-        logger.warning('Not controller.client.is_connected')
+        logger.critical('Connection lost.')
+        return
       await asyncio.sleep(2)
           
   except KeyboardInterrupt:

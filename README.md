@@ -18,9 +18,16 @@ Example: `R U R' U' - win+D # Close all windows`
   
     Example: "R U R' U'"
 2. ` - ` (a hyphen surrounded by spaces) to separate the formula and keys.
-3. `<key combination>`: combination of `ctrl`, `shift`, `alt`, `win`, `tab`, letter/digit keys, `F<number>` keys and delay in seconds (additionally). Keys joined with "+".
+3. `<key combination>`: combination of keyboard keys. Keys joined with "+".
+    
+    Full list of supported keys: 
+    - Special keys: [`'ctrl'`, `'shift'`, `'tab'`, `'win'`, `'left'`, `'right'`, `'up'`, `'down'`, `'enter'`, `'space'`, `'esc'`/`'escape'`, `'backspace'`, `'del'`/`'delete'`, `'insert'`, `'home'`, `'end'`, `'pageup'`, `'pagedown'`, `'capslock'`, `'alt'`]
+    - `F1`-`F12` keys
+    - Letter and digit keys
+    - Symbols: [`'comma' / ","`, `'period' / "."`, `'slash' / "/"`, `'backslash' / "\"`, `'semicolon' / ";"`, `'quote' / "'"`, `'minus' / "-"`, `'equals' / "="`, `'leftbracket' / "{"`, `'rightbracket' / "}"`, `'backtick'`]
+    - Hold time as `1.1s` (see "Advanced adjustments" for clatifications)
   
-    Example: `win+shift+G`
+    Example: `shift+semicolon`, `ctrl+{`, `tab+0.5s`
 4. Everything after the `#` symbol is ignored by the script and may be used for comments.
 
 ## Tips and unexpected behavior
@@ -39,20 +46,22 @@ Mind that similar moves in buffer will be merged and can cancel out each other.
 
 Remember to hold cube with the right orientation: White center piece up and green center piece front.
 
-The script do not stores the whole history of moves - only last 100 moves. Alse it clears the buffer if not receiving any moves for 10 seconds
+The script does not store the whole history of moves - only last 100 moves. Also it clears the buffer if not receiving any moves for 10 seconds
 
 ## Advanced adjustments
 
 You can change the script behavior in following ways:
-- You can control how the script treats the buffer after it read some formula. To do it you can add in `binds.txt` line `! FLUSH` (or replace "FLUSH" with name of other mode) .There are three modes:
+- You can control how the script treats the buffer after it read some formula. To do it you can add in `binds.txt` line `! DELETION FLUSH` (or replace "FLUSH" with name of other mode). There are three modes:
     - `FLUSH` **(default)**. In this mode script clears the whole buffer after reading any formula
     - `POSTFIX`. In this mode script will delete only the formula itself remaining all previous history of moves.
 
         **Example:** You have bind `R U F U' - ctrl`. You can do `R U F` 5 times, then do `U'` 5 times and you'll hit `ctrl` 5 times. In default mode it wouldn't be possible. Note that it wouldn't work with formula `R U R' U'` since `R U R'` + `R U R'` = `R U R' R U R'` = `R U U R'` = `R U2 R'`
     
-    - `KEEP`. In this mode script never delete anything from the buffer (except it can't store more than 100 moves). Though, the script checking for matching formulas only when it receives new move so it won't hold the key forever if the buffer contains right formula in its end.
+    - `KEEP`. In this mode script never delete anything from the buffer (except it can't store more than 100 moves). Though, the script checks for matching formulas only when it receives new move so it won't hold the key forever if the buffer contains right formula in its end.
 
-        **Example:** You have bind `R U R' U' - F5`. You can do the formula once then do `R R'` continuously. The `R R'` will cancel out each other and the end of the buffer again will match the bind.
+        **Example:** You have bind `R U R' U' - F5`. You can do the formula once then do `R R'` continuously. The `R R'` will cancel out each other and the end of the buffer will match the bind again.
+
+- You can control after how much time of inactivity script clears the buffer (default is 10 seconds). To do that, add line `! IDLE_TIME <float>`, where `<float>` is represented in seconds (but it can be `0.5`). `! IDLE_TIME 0` disables this feature
 
 - You can adjust how long the script will be holding the combination of keys. To do that you can add `1.0s` (replace the number with yours) to combination as another key. **Example:** `win+shift+D+3.141s`. The default value is `0.01s`.
 

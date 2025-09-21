@@ -102,7 +102,7 @@ class KeyEmulator:
        '\\': 0xDC,  # VK_OEM_5
         ';': 0xBA,  # VK_OEM_1
         "'": 0xDE,  # VK_OEM_7
-        '-': 0xBD,  # VK_OEM_MINUS
+        # '-': 0xBD,  # VK_OEM_MINUS  '-' reserved for separation
         '=': 0xBB,  # VK_OEM_PLUS
         '[': 0xDB,  # VK_OEM_4
         ']': 0xDD,  # VK_OEM_6

@@ -44,15 +44,19 @@ class GANCubeController:
     # Scanning for devices
     self.logger.info("Searching for GAN Smart Cube...")
     devices = await BleakScanner.discover(timeout=5.0)
-    devices = [device for device in devices if device.name and 'GAN' in device.name]
-    if not devices:
+    gan_devices = [device for device in devices if device.name and 'GAN' in device.name]
+    if not gan_devices:
+      if not devices:
+        self.logger.critical('Couldn\'t find any device. Most likely, something wrong with bluetooth.')
+      else:
+        self.logger.warning('Couldn\'t find the cube, but the bluetooth is working.')
       return False
 
     # Connecting
-    self.logger.info(f"Found {devices[0].name}. Connecting...")
-    self.client = BleakClient(devices[0])
+    self.logger.info(f"Found {gan_devices[0].name}. Connecting...")
+    self.client = BleakClient(gan_devices[0])
     await self.client.connect()
-    self.logger.info(f"Connected to {devices[0].name} ({devices[0].address}).")
+    self.logger.info(f"Connected to {gan_devices[0].name} ({gan_devices[0].address}).")
 
     # Choosing right protocol
     self.protocol = _choose_protocol(self.client)
@@ -212,7 +216,8 @@ async def main():
   try:
     while not await controller.connect_to_cube():
       wait_time = 2
-      controller.logger.warning(f'Cube not found. It should blink white. Try do (U4)x5.')
+      controller.logger.warning('Cube not found. It should blink white.')
+      controller.logger.info('Check that the cube isn\'t connected to your PC. Try do (U4)x5.')
       controller.logger.warning(f'Trying again in {wait_time} seconds.')
       await asyncio.sleep(wait_time)
     logger.info("Cube connected.")

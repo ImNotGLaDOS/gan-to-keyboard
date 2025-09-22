@@ -65,7 +65,7 @@ class GANCubeController:
       await self.client.disconnect()
       return False
     else:
-      self.logger.info(f'Choosed protocol: {self.protocol}')
+      self.logger.debug(f'Choosed protocol: {self.protocol}')
       self.NOTIFY_UUID = UUIDS_LIST[self.protocol]['notify']
       self.WRITE_UUID = UUIDS_LIST[self.protocol]['write']
       

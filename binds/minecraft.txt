@@ -1,0 +1,26 @@
+! DELETION FLUSH  # FLUSH or POSTFIX or KEEP
+! IDLE_TIME 1
+
+# Mouse
+R U R' U' - lmb
+R U R' U - rmb
+
+R U R2 U' - lmb+8.0s
+R U R2 U - rmb+8.0s
+
+# Movement
+F R - W+0.7s
+F R' - S+0.7s
+F U' - A+0.7s
+F U - D+0.7s
+
+F2 R - W+10.0s
+F2 R' - S+10.0s
+F2 U' - A+10.0s
+F2 U - D+10.0s
+
+F' R - space
+F' R' - ctrl
+
+# Inventory
+B2 - tab

@@ -18,11 +18,14 @@ class KeyEmulator:
       constants = {'delete_mode': 'flush', 'idle_time': 10}
     self.delete_mode = constants['delete_mode']
 
+    self.schedule: list[tuple[float, bool, int | str]] = []  # Elem: (time, is_to_press, key)
+    self.currently_pressed: list[int | str] = []
+
 
   def process_buffer(self, buffer: list[str]) -> None:
     if keys := self._recognize(buffer):
-      for comb in keys:
-        self._press_keys(*self._key_to_codes(comb))  # _key_to_codes returns (codes, hold_time)
+      coded_combs = [self._key_to_codes(comb) for comb in keys]  # list[(time, coded_comb)]
+      self._create_task(coded_combs)
   
 
   def _recognize(self, turns: list[str]) -> list[list[str]] | None:
@@ -48,13 +51,13 @@ class KeyEmulator:
     return None
   
 
-  def _key_to_codes(self, key: list[str]) -> tuple[list[int | str], float]:
+  def _key_to_codes(self, key: list[str]) -> tuple[float, list[int | str]]:
     """
     key: key press in format ["ctrl", "A"]
-    generate list of codes 'win32con.VK_{}'
+    ret: hold_time and list of codes 'win32con.VK_{}'
     """
     ret: list[int] = []
-    hold_time: float = 0.01
+    hold_time: float = 0.05
 
     # Mapping for special keys
     special_keys = {
@@ -154,34 +157,72 @@ class KeyEmulator:
       else:
         self.logger.warning(f'Unrecognizable key: {subkey}')
 
-    return ret, hold_time
+    return hold_time, ret
 
 
-  def _press_keys(self, keys: list[int | str], hold_time: float) -> None:
-    """
-    press the provided coded keys (then unpress)
-    """
-    for key in keys:
-      if isinstance(key, int):
-        win32api.keybd_event(key, 0, 0, 0)
-      else:
-        if key == 'lmb':
-          win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
-        elif key == 'rmb':
-          win32api.mouse_event(win32con.MOUSEEVENTF_RIGHTDOWN, 0, 0, 0, 0)
+  def _create_task(self, tasks: list[tuple[float, list[int | str]]]):
+    schedule = []
+
+    t = time.time()
+    for hold_time, keys in tasks:
+      for key in keys:
+        schedule.append((t, True, key))
       
-    time.sleep(hold_time)
+      t += hold_time
 
-    for key in reversed(keys):
+      for key in reversed(keys):
+        schedule.append((t, False, key))
+      
+      t += 0.05  # To separate presses
+    
+    self.schedule.extend(schedule)
+    self.schedule.sort()
+
+
+  def press_keys(self) -> None:
+    """
+    Process the schedule
+    """
+    t = time.time()
+    tasks = [task for task in self.schedule if task[0] <= t]
+
+    for scheduled_to, is_to_press, key in tasks:
+      # Checking if trying to unpress unpressed key
+      if not is_to_press and key not in self.currently_pressed:
+        continue
+      # ...and to press pressed
+      if is_to_press and key in self.currently_pressed:
+        continue
+
+      # Regular key
       if isinstance(key, int):
-        win32api.keybd_event(key, 0, win32con.KEYEVENTF_KEYUP, 0)
+        if is_to_press:
+          win32api.keybd_event(key, 0, 0, 0)
+        else:
+          win32api.keybd_event(key, 0, win32con.KEYEVENTF_KEYUP, 0)
+
+      # Mouse
       else:
         if key == 'lmb':
-          win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+          if is_to_press:
+            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+          else:
+            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
         elif key == 'rmb':
-          win32api.mouse_event(win32con.MOUSEEVENTF_RIGHTUP, 0, 0, 0, 0)
+          if is_to_press:
+            win32api.mouse_event(win32con.MOUSEEVENTF_RIGHTDOWN, 0, 0, 0, 0)
+          else:
+            win32api.mouse_event(win32con.MOUSEEVENTF_RIGHTUP, 0, 0, 0, 0)
 
-    time.sleep(0.01)
+      # Updating currently_pressed
+      if is_to_press:
+        self.currently_pressed.append(key)
+      else:
+        self.currently_pressed.remove(key)
+    
+    # Deleting completed tasks
+    self.schedule = [task for task in self.schedule if task[0] > t]
+
 
 
 logger = logging.getLogger('KeyScript')
@@ -244,6 +285,8 @@ def main():
   last_ts = time.time()
 
   while True:
+    key_emulator.press_keys()
+
     if moves := pipe.read():
       for move in moves:  # Emulating reading one-by-one
         last_ts = time.time()

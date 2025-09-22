@@ -48,7 +48,7 @@ class KeyEmulator:
     return None
   
 
-  def _key_to_codes(self, key: list[str]) -> tuple[list[int], float]:
+  def _key_to_codes(self, key: list[str]) -> tuple[list[int | str], float]:
     """
     key: key press in format ["ctrl", "A"]
     generate list of codes 'win32con.VK_{}'
@@ -79,7 +79,12 @@ class KeyEmulator:
       'pageup': win32con.VK_PRIOR,
       'pagedown': win32con.VK_NEXT,
       'capslock': win32con.VK_CAPITAL,
-      'alt': win32con.VK_MENU
+      'alt': win32con.VK_MENU,
+
+      'lmb': 'lmb',
+      'lclick': 'lmb',
+      'rmb': 'rmb',
+      'rclick': 'rmb'
     }
 
     symbol_map = {
@@ -152,16 +157,31 @@ class KeyEmulator:
     return ret, hold_time
 
 
-  def _press_keys(self, keys: list[int], hold_time: float) -> None:
+  def _press_keys(self, keys: list[int | str], hold_time: float) -> None:
     """
     press the provided coded keys (then unpress)
     """
     for key in keys:
-      win32api.keybd_event(key, 0, 0, 0)
+      if isinstance(key, int):
+        win32api.keybd_event(key, 0, 0, 0)
+      else:
+        if key == 'lmb':
+          win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+        elif key == 'rmb':
+          win32api.mouse_event(win32con.MOUSEEVENTF_RIGHTDOWN, 0, 0, 0, 0)
+      
     time.sleep(hold_time)
+
     for key in reversed(keys):
-      win32api.keybd_event(key, 0, win32con.KEYEVENTF_KEYUP, 0)
-      time.sleep(0.01)
+      if isinstance(key, int):
+        win32api.keybd_event(key, 0, win32con.KEYEVENTF_KEYUP, 0)
+      else:
+        if key == 'lmb':
+          win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+        elif key == 'rmb':
+          win32api.mouse_event(win32con.MOUSEEVENTF_RIGHTUP, 0, 0, 0, 0)
+
+    time.sleep(0.01)
 
 
 logger = logging.getLogger('KeyScript')

@@ -2,4 +2,5 @@
 ! IDLE_TIME 10
 
 R L' - alt+tab
-R U R' U' - win+D+0.5s
+R U R' U' - win+D 0.5s win+D
+R' F R F' - lmb

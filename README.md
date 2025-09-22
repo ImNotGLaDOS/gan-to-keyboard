@@ -28,6 +28,7 @@ Example: `R U R' U' - win+D # Close all windows`
     - `F1`-`F12` keys.
     - Letter and digit keys.
     - Symbols: [`'comma' / ','`, `'period' / '.'`, `'slash' / '/'`, `'backslash' / '\'`, `'semicolon' / ';'`, `'quote' / "'"`, `'minus'` (note that `'-'` is reserved for binds separation), `'equals' / '='`, `'leftbracket' / '{'`, `'rightbracket' / '}'`, `'backtick'`].
+    - Mouse buttons: [`'lmb' / 'lclick'`, `'rmb' / 'rclick'`]
     - Hold time as `1.1s` (see "Advanced adjustments" for clarification).
   
     Example: `shift+semicolon`, `ctrl+{`, `tab+0.5s`

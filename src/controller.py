@@ -122,7 +122,7 @@ class GANCubeController:
     data = bytearray(self.cryptor.decrypt(data))
     
     try:
-      if data[0] & 0x0f == 0x02:  # Last move in notation
+      if data[0] & 0x0f == 0x02:  # Moves in notation
         self.logger.debug(f'Got move data: {data.hex()}')
         if self.move_count is None:  # Can process moves only after getting facelets state
           return
@@ -131,7 +131,11 @@ class GANCubeController:
           self.logger.debug(f'Parced moves: {moves}')
           self.send(moves)
       elif data[0] & 0x0f == 0x04:  # Facelets
-        self.move_count = int(data[0] >> 4)
+        array = ''.join(format(byte, '08b') for byte in data)
+        def getBitWord(array, start, length):
+          return array[start: start + length]
+        
+        self.move_count = int(getBitWord(array, 4, 8), 2)
         pass  # There can be logic of reconstucting facelets
       else:
         self.logger.debug(f'Got unknown notification: {data.hex()}')
@@ -183,10 +187,14 @@ class GANCubeController:
     while i >= 0:
       print(f'i = {i}')  # DEBUG
       print(f'direction_raw, face_raw = {getBitWord(array, 16 + 5 * i, 1)}, {getBitWord(array, 12 + 5 * i, 4)}')  # DEBUG
-      direction = int(getBitWord(array, 16 + 5 * i, 1))
-      face = [1, 5, 3, 0, 4, 2][int(getBitWord(array, 12 + 5 * i, 4), 2)]
+      direction = int(getBitWord(array, 16 + 5 * i, 1), 2)
+      face = int(getBitWord(array, 12 + 5 * i, 4), 2)
       print(f'direction_int, face_int = {direction}, {face}')  # DEBUG
       
+      if face > 5:
+        self.logger.warning('Reseived corrupted move data (face_mapper > 5)')
+        i -= 1
+        continue
       move = ('URFDLB'[face] + ' \''[direction]).replace(' ', '')
       ret.append(move)
       print(f'Got move: {move}')  # DEBUG

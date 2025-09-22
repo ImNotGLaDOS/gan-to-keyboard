@@ -11,7 +11,7 @@ from uuids_list import UUIDS_LIST
 
 
 
-def _choose_protocol(client: BleakClient) -> tuple[str, str]:
+async def _choose_protocol(client: BleakClient) -> tuple[str, str]:
   uuids_list = []
   for service in client.services:
     for char in service.characteristics:
@@ -59,17 +59,17 @@ class GANCubeController:
     self.logger.info(f"Connected to {gan_devices[0].name} ({gan_devices[0].address}).")
 
     # Choosing right protocol
-    self.protocol = _choose_protocol(self.client)
+    self.protocol = await _choose_protocol(self.client)
     if not self.protocol:
       self.logger.critical("Unknown protocol. Disconnecting...")
-      self.client.disconnect()
+      await self.client.disconnect()
       return False
     else:
       self.logger.info(f'Choosed protocol: {self.protocol}')
       self.NOTIFY_UUID = UUIDS_LIST[self.protocol]['notify']
       self.WRITE_UUID = UUIDS_LIST[self.protocol]['write']
       
-    self.cryptor = Cryptor(devices[0].address)
+    self.cryptor = Cryptor(gan_devices[0].address)
     
     # Subscribe to notifications
     if self.protocol == 'Gen2':
@@ -217,8 +217,8 @@ async def main():
     while not await controller.connect_to_cube():
       wait_time = 2
       controller.logger.warning('Cube not found. It should blink white.')
-      controller.logger.info('Check that the cube isn\'t connected to your PC. Try do (U4)x5.')
-      controller.logger.warning(f'Trying again in {wait_time} seconds.')
+      controller.logger.warning('Check that the cube isn\'t connected to your PC. Try do (U4)x5.')
+      controller.logger.info(f'Trying again in {wait_time} seconds.\n')
       await asyncio.sleep(wait_time)
     logger.info("Cube connected.")
 

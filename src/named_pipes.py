@@ -72,19 +72,19 @@ class PipeReader:
     self.logger.debug("Pipe client connected.")
 
 
-  def read(self, buffer: list[str]) -> bool:
+  def read(self) -> list[str] | None:
     """
     read new data from pipe and append it to buffer
-    ret: bool("there is new data")
+    ret: list of readed moves or None
     """
     try:
       if win32pipe.PeekNamedPipe(self.pipe, 0)[1] == 0:
-        return False
+        return None
       data = win32file.ReadFile(self.pipe, 65536)
       data = data[1].decode('utf-8').strip(';').split(';')
-      buffer.extend(data)
+
       self.logger.debug(f'Read: "{data}"')
-      return True
+      return data
     except win32file.error as e:
       if e.winerror == 232:  # EOF
         self.logger.debug(f'Recieved EOF')

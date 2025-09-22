@@ -3,10 +3,10 @@ import logging
 
 logger = logging.getLogger('Bind_Uploader')
 
-def upload_binds() -> tuple[ dict[tuple[str], str], dict[str, any] ]:
+def upload_binds() -> tuple[ dict[tuple[str], list[list[str]]], dict[str, any] ]:
   """
   loads binds from binds.txt
-  ret: dict[<formula>, <key bind>], dict{'delete_mode': 'flush/postfix/keep', 'idle_time': float}
+  ret: dict[<formula>, [<key bind>, ...]], dict{'delete_mode': 'flush/postfix/keep', 'idle_time': float}
   """
   ret: dict[tuple[str], str] = {}
   constants = {'delete_mode': 'flush', 'idle_time': 10}
@@ -53,9 +53,11 @@ def upload_binds() -> tuple[ dict[tuple[str], str], dict[str, any] ]:
         
       bind = bind.split('-')
       formula: list[str] = bind[0].strip().split()  # example: ['L', 'R\'', 'U2']
-      key: list[str] = bind[1].strip().replace(' ', '').split('+')  # ['ctrl', 'R', '0.5s']
+      keys_list: list[str] = bind[1].strip().split()  # ['ctrl+U', '0.5s', 'alt+tab']
+      keys_list = [comb.split('+') for comb in keys_list]  # [['ctrl', 'U'], ['0.5s'], ['alt', 'tab']]
 
-      ret[tuple(formula)] = key
+      ret[tuple(formula)] = keys_list
   
-  logger.info(f'Readed binds: {ret}')
+  ret_repr = '\n'.join([repr(bind) for bind in ret.items()])
+  logger.info(f'Readed binds:\n{ret_repr}')
   return ret, constants

@@ -10,7 +10,7 @@ MAX_BUFFER_SIZE = 100
 
 
 class KeyEmulator:
-  def __init__(self, bind_list: dict[tuple[str], str], constants: dict[str, any] | None = None):
+  def __init__(self, bind_list: dict[tuple[str], list[list[str]]], constants: dict[str, any] | None = None):
     self.logger = logging.getLogger('KeyEmulator')
     self.bind_list = bind_list
 
@@ -21,22 +21,23 @@ class KeyEmulator:
 
   def process_buffer(self, buffer: list[str]) -> None:
     if keys := self._recognize(buffer):
-      self._press_keys(*self._key_to_codes(keys))  # _key_to_codes returns (codes, hold_time)
+      for comb in keys:
+        self._press_keys(*self._key_to_codes(comb))  # _key_to_codes returns (codes, hold_time)
   
 
-  def _recognize(self, turns: list[str]) -> list[str] | None:
+  def _recognize(self, turns: list[str]) -> list[list[str]] | None:
     """
     Search matches with binds in `turns`
-    ret: key to press (e.g. ['ctrl', 'A'])
+    ret: key to press (i.g. [['ctrl', 'A'], ['0.5s'], ['alt', 'tab']])
     """
-    for postfix in range(len(turns), 0, -1):
-      if tuple(turns[-postfix:]) in self.bind_list.keys():
-        ret = self.bind_list[tuple(turns[-postfix:])]
+    for formula in self.bind_list.keys():
+      if len(formula) <= len(turns) and turns[-len(formula):] == list(formula):
+        ret = self.bind_list[formula]
 
         if self.delete_mode == 'flush':
           turns.clear()
         elif self.delete_mode == 'postfix':
-          del turns[-postfix:]
+          del turns[-len(formula):]
         elif self.delete_mode == 'keep':
           pass
         else:
@@ -160,6 +161,7 @@ class KeyEmulator:
     time.sleep(hold_time)
     for key in reversed(keys):
       win32api.keybd_event(key, 0, win32con.KEYEVENTF_KEYUP, 0)
+      time.sleep(0.01)
 
 
 logger = logging.getLogger('KeyScript')
@@ -222,19 +224,20 @@ def main():
   last_ts = time.time()
 
   while True:
-    if pipe.read(buffer):
-      last_ts = time.time()
+    if moves := pipe.read():
+      for move in moves:  # Emulating reading one-by-one
+        last_ts = time.time()
+        buffer.append(move)
 
-      trim_buffer(buffer)
-      key_emulator.process_buffer(buffer)
-      logger.info(f'Current buffer (last 10) - {buffer[-10:]}')
+        trim_buffer(buffer)
+        key_emulator.process_buffer(buffer)
+        logger.info(f'Current buffer (last 10) - {buffer[-10:]}')
     
-    elif constants['idle_time'] != 0 and \
-           time.time() - last_ts > constants['idle_time'] \
-           and len(buffer) != 0:
-      buffer.clear()
-      logger.info('Cleared the buffer due to inactivity. []')
-      last_ts = time.time()
+    elif constants['idle_time'] != 0:
+      if time.time() - last_ts > constants['idle_time'] and len(buffer) != 0:
+        buffer.clear()
+        logger.info('Cleared the buffer due to inactivity. []')
+        last_ts = time.time()
 
 
 if __name__ == "__main__":

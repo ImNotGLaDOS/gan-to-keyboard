@@ -2,7 +2,7 @@
 Python script to map GAN smart cube turns to keyboard presses. Works only on Windows.
 
 # Disclaimer
-This project isn't properly tested yet, so if you experience any issues or don't understand something and README isn't helping, please contact the creator. It will not only help you solve the problem but also will help improve the project. Any suggestions are also welcome.
+This project isn't properly tested yet, so if you experience any issues or don't understand something and README isn't helping, please contact the creator. It will not only help you solve the problem but also will help improve the project. Any suggestions and feedback are also welcome.
 
 # How to use it
 1. Ensure you have Python 3 installed and Bluetooth enabled on your system.
@@ -27,7 +27,7 @@ Example: `R U R' U' - win+D # Close all windows`
     - Special keys: [`'ctrl'`, `'shift'`, `'tab'`, `'win'`, `'left'`, `'right'`, `'up'`, `'down'`, `'enter'`, `'space'`, `'esc'`/`'escape'`, `'backspace'`, `'del'`/`'delete'`, `'insert'`, `'home'`, `'end'`, `'pageup'`, `'pagedown'`, `'capslock'`, `'alt'`].
     - `F1`-`F12` keys.
     - Letter and digit keys.
-    - Symbols: [`'comma' / ','`, `'period' / '.'`, `'slash' / '/'`, `'backslash' / '\'`, `'semicolon' / ';'`, `'quote' / "'"`, `'minus'`, `'equals' / '='`, `'leftbracket' / '{'`, `'rightbracket' / '}'`, `'backtick'`].
+    - Symbols: [`'comma' / ','`, `'period' / '.'`, `'slash' / '/'`, `'backslash' / '\'`, `'semicolon' / ';'`, `'quote' / "'"`, `'minus'` (note that `'-'` is reserved for binds separation), `'equals' / '='`, `'leftbracket' / '{'`, `'rightbracket' / '}'`, `'backtick'`].
     - Hold time as `1.1s` (see "Advanced adjustments" for clarification).
   
     Example: `shift+semicolon`, `ctrl+{`, `tab+0.5s`
@@ -54,6 +54,8 @@ The script does not store the whole history of moves -- only the last 100 moves.
 ## Advanced adjustments
 
 You can change the script behavior in the following ways:
+- You can make more than one key combination in the bind. The combinations should be separated with space. Note that hold time (i.g. `0.5s`) is technically also a combination. **Example:** `R U - win+D 5.0s win+D  # Show the desktop for 5 seconds`
+
 - You can control how the script treats the buffer after it reads a formula. To do this, you can add the line `! DELETION FLUSH` (or replace "FLUSH" with name of other mode) in `binds.txt`. There are three modes:
     - `FLUSH` **(default)**. In this mode, the script clears the whole buffer after reading any formula
     - `POSTFIX`. In this mode, the script will delete only the formula itself leaving all previous history of moves.

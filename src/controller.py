@@ -174,23 +174,23 @@ class GANCubeController:
     def getBitWord(array, start, length):
       return array[start: start + length]
     
-    print('\n\n' + '-' * 10 + ' Start of block ' + '-' * 10)  # DEBUG
-    print(f'Got array: {data.hex(), array}')  # DEBUG
+    # print('\n\n' + '-' * 10 + ' Start of block ' + '-' * 10)  # DEBUG
+    # print(f'Got array: {data.hex(), array}')  # DEBUG
     move_count = int(getBitWord(array, 4, 8), 2)
     sended_count = min((move_count - self.move_count) & 0xff, 7)  # TODO: move_count suppose to cicle like u_int8 and "& 0xff" is for 255->0 transition. Does it work correctly in Python?
     self.move_count = move_count
-    print(f'Move_count, self_count, sended_count = {move_count}, {self.move_count}, {sended_count}')  # DEBUG
+    # print(f'Move_count, self_count, sended_count = {move_count}, {self.move_count}, {sended_count}')  # DEBUG
     if sended_count <= 0:
       self.logger.warning('Not positive sended_count.')
       return []
 
     ret = []
     for i in range(sended_count - 1, -1, -1):
-      print(f'i = {i}')  # DEBUG
-      print(f'direction_raw, face_raw = {getBitWord(array, 16 + 5 * i, 1)}, {getBitWord(array, 12 + 5 * i, 4)}')  # DEBUG
+      # print(f'i = {i}')  # DEBUG
+      # print(f'direction_raw, face_raw = {getBitWord(array, 16 + 5 * i, 1)}, {getBitWord(array, 12 + 5 * i, 4)}')  # DEBUG
       direction = int(getBitWord(array, 16 + 5 * i, 1), 2)
       face = int(getBitWord(array, 12 + 5 * i, 4), 2)
-      print(f'direction_int, face_int = {direction}, {face}')  # DEBUG
+      # print(f'direction_int, face_int = {direction}, {face}')  # DEBUG
       
       if face > 5:
         self.logger.warning('Reseived corrupted move data (face_mapper > 5)')
@@ -198,11 +198,11 @@ class GANCubeController:
         continue
       move = ('URFDLB'[face] + ' \''[direction]).replace(' ', '')
       ret.append(move)
-      print(f'Got move: {move}')  # DEBUG
+      # print(f'Got move: {move}')  # DEBUG
 
       i -= 1
-    print('-' * 10 + '  End of block  ' + '-' * 10)  # DEBUG
-    print('')  # DEBUG
+    # print('-' * 10 + '  End of block  ' + '-' * 10)  # DEBUG
+    # print('')  # DEBUG
     return ret[::-1]  # TODO: Does move send in reverse?
 
 

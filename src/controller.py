@@ -122,7 +122,7 @@ class GANCubeController:
     data = bytearray(self.cryptor.decrypt(data))
     
     try:
-      if data[0] & 0x0f == 0x02:  # Moves in notation
+      if data[0] >> 4 == 0x02:  # Moves in notation
         self.logger.debug(f'Got move data: {data.hex()}')
         if self.move_count is None:  # Can process moves only after getting facelets state
           return
@@ -130,13 +130,15 @@ class GANCubeController:
         if moves:
           self.logger.debug(f'Parced moves: {moves}')
           self.send(moves)
-      elif data[0] & 0x0f == 0x04:  # Facelets
+
+      elif data[0] >> 4 == 0x04:  # Facelets
         array = ''.join(format(byte, '08b') for byte in data)
         def getBitWord(array, start, length):
           return array[start: start + length]
         
         self.move_count = int(getBitWord(array, 4, 8), 2)
         pass  # There can be logic of reconstucting facelets
+
       else:
         self.logger.debug(f'Got unknown notification: {data.hex()}')
         
@@ -175,7 +177,7 @@ class GANCubeController:
     print('\n\n' + '-' * 10 + ' Start of block ' + '-' * 10)  # DEBUG
     print(f'Got array: {data.hex(), array}')  # DEBUG
     move_count = int(getBitWord(array, 4, 8), 2)
-    sended_count = min((move_count - self.move_count) & 0xff, 7)  # TODO: Figure out what "& 0xff" is for 
+    sended_count = min((move_count - self.move_count) & 0xff, 7)  # TODO: move_count suppose to cicle like u_int8 and "& 0xff" is for 255->0 transition. Does it work correctly in Python?
     self.move_count = move_count
     print(f'Move_count, self_count, sended_count = {move_count}, {self.move_count}, {sended_count}')  # DEBUG
     if sended_count <= 0:
@@ -183,8 +185,7 @@ class GANCubeController:
       return []
 
     ret = []
-    i = sended_count - 1
-    while i >= 0:
+    for i in range(sended_count - 1, -1, -1):
       print(f'i = {i}')  # DEBUG
       print(f'direction_raw, face_raw = {getBitWord(array, 16 + 5 * i, 1)}, {getBitWord(array, 12 + 5 * i, 4)}')  # DEBUG
       direction = int(getBitWord(array, 16 + 5 * i, 1), 2)
@@ -202,7 +203,7 @@ class GANCubeController:
       i -= 1
     print('-' * 10 + '  End of block  ' + '-' * 10)  # DEBUG
     print('')  # DEBUG
-    return ret
+    return ret[::-1]  # TODO: Does move send in reverse?
 
 
 

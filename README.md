@@ -77,7 +77,7 @@ A list of supported cubes:
 1. Gen2-protocol cubes:
     - `NOT TESTED` GAN Mini ui FreePlay
     - `NOT TESTED` GAN12 ui
-    - `NOT TESTED` GAN356 i Carry S
+    - GAN356 i Carry S
     - `NOT TESTED` GAN356 i Carry
     - `NOT TESTED` GAN356 i 3
 2. Gen3-protocol cubes:

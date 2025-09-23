@@ -18,7 +18,7 @@ class KeyEmulator:
       constants = {'delete_mode': 'flush', 'idle_time': 10}
     self.delete_mode = constants['delete_mode']
 
-    self.schedule: list[tuple[float, bool, int | str]] = []  # Elem: (time, is_to_press, key)
+    self.schedule: list[tuple[float, bool, int | str]] = []  # Elements: (time, is_to_press, key)
     self.currently_pressed: list[int | str] = []
 
 
@@ -176,7 +176,6 @@ class KeyEmulator:
       t += 0.05  # To separate presses
     
     self.schedule.extend(schedule)
-    self.schedule.sort()
 
 
   def press_keys(self) -> None:

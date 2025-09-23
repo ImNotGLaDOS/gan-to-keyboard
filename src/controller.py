@@ -74,10 +74,20 @@ class GANCubeController:
     # Subscribe to notifications
     if self.protocol == 'Gen2':
       await self.client.start_notify(self.NOTIFY_UUID, self._notification_handler_gen2)
+      # Request the initial state from the cube. For gen2 it's necessary
+      await self.client.write_gatt_char(self.WRITE_UUID, self.cryptor.encrypt(b'\x04' + b'\x00' * 19), response=True)
+
     elif self.protocol == 'Gen3':
       await self.client.start_notify(self.NOTIFY_UUID, self._notification_handler_gen3)
+      # Request the initial state from the cube
+      await self.client.write_gatt_char(self.WRITE_UUID, self.cryptor.encrypt(b'\x68' + b'\x01' + b'\x00' * 18), response=True)
+
     else:  # self.protocol == 'Gen4'
       await self.client.start_notify(self.NOTIFY_UUID, self._notification_handler_gen4)
+      # Request the initial state from the cube
+      await self.client.write_gatt_char(self.WRITE_UUID, self.cryptor.encrypt(b'\x05' + b'\x00' * 19), response=True)
+    
+    
     
     return True
   
@@ -120,11 +130,14 @@ class GANCubeController:
 
   def _notification_handler_gen2(self, sender, data: bytearray):
     data = bytearray(self.cryptor.decrypt(data))
+    self.logger.debug(f'Got notification: {data.hex()}')
     
     try:
       if data[0] >> 4 == 0x02:  # Moves in notation
-        self.logger.debug(f'Got move data: {data.hex()}')
+        self.logger.debug(f'Got move data.')
+
         if self.move_count is None:  # Can process moves only after getting facelets state
+          self.logger.debug('Got moves but don\'t know initial state')
           return
         moves = self._parce_moves_gen2(data)
         if moves:
@@ -132,6 +145,7 @@ class GANCubeController:
           self.send(moves)
 
       elif data[0] >> 4 == 0x04:  # Facelets
+        self.logger.debug('Got facelets data')
         array = ''.join(format(byte, '08b') for byte in data)
         def getBitWord(array, start, length):
           return array[start: start + length]
@@ -140,10 +154,10 @@ class GANCubeController:
         pass  # There can be logic of reconstucting facelets
 
       else:
-        self.logger.debug(f'Got unknown notification: {data.hex()}')
+        self.logger.debug(f'Unknown notification.')
         
     except Exception as e:
-      self.logger.critical(f"Error processing cube data: {e}")
+      self.logger.warning(f"Error processing cube data: {e}")
 
 
   ###########################       Data parcers       ###########################
@@ -174,35 +188,28 @@ class GANCubeController:
     def getBitWord(array, start, length):
       return array[start: start + length]
     
-    # print('\n\n' + '-' * 10 + ' Start of block ' + '-' * 10)  # DEBUG
-    # print(f'Got array: {data.hex(), array}')  # DEBUG
     move_count = int(getBitWord(array, 4, 8), 2)
     sended_count = min((move_count - self.move_count) & 0xff, 7)  # TODO: move_count suppose to cicle like u_int8 and "& 0xff" is for 255->0 transition. Does it work correctly in Python?
     self.move_count = move_count
-    # print(f'Move_count, self_count, sended_count = {move_count}, {self.move_count}, {sended_count}')  # DEBUG
     if sended_count <= 0:
       self.logger.warning('Not positive sended_count.')
       return []
 
     ret = []
     for i in range(sended_count - 1, -1, -1):
-      # print(f'i = {i}')  # DEBUG
-      # print(f'direction_raw, face_raw = {getBitWord(array, 16 + 5 * i, 1)}, {getBitWord(array, 12 + 5 * i, 4)}')  # DEBUG
       direction = int(getBitWord(array, 16 + 5 * i, 1), 2)
       face = int(getBitWord(array, 12 + 5 * i, 4), 2)
-      # print(f'direction_int, face_int = {direction}, {face}')  # DEBUG
       
       if face > 5:
         self.logger.warning('Reseived corrupted move data (face_mapper > 5)')
         i -= 1
         continue
+
       move = ('URFDLB'[face] + ' \''[direction]).replace(' ', '')
       ret.append(move)
-      # print(f'Got move: {move}')  # DEBUG
 
       i -= 1
-    # print('-' * 10 + '  End of block  ' + '-' * 10)  # DEBUG
-    # print('')  # DEBUG
+
     return ret[::-1]  # TODO: Does move send in reverse?
 
 

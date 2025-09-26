@@ -76,9 +76,9 @@ You can change the script behavior in the following ways:
 A list of supported cubes:
 1. Gen2-protocol cubes:
     - `NOT TESTED` GAN Mini ui FreePlay
-    - `NOT TESTED` GAN12 ui
+    - GAN12 ui
     - GAN356 i Carry S
-    - `NOT TESTED` GAN356 i Carry
+    - GAN356 i Carry
     - `NOT TESTED` GAN356 i 3
 2. Gen3-protocol cubes:
     - `NOT TESTED` GAN356 i Carry 2

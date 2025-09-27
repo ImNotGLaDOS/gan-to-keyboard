@@ -9,7 +9,13 @@ def upload_binds() -> tuple[ dict[tuple[str], list[list[str]]], dict[str, any] ]
   ret: dict[<formula>, [<key bind>, ...]], dict{'delete_mode': 'flush/postfix/keep', 'idle_time': float}
   """
   ret: dict[tuple[str], str] = {}
-  constants = {'delete_mode': 'flush', 'idle_time': 10}
+  constants = {
+    'delete_mode': 'flush',
+    'idle_time': 10,
+    'x_sens': 1,
+    'y_sens': 1
+  }
+
   with open('binds.txt') as file:
     binds = file.read()
 
@@ -26,18 +32,17 @@ def upload_binds() -> tuple[ dict[tuple[str], list[list[str]]], dict[str, any] ]
       
       # Commands
       if bind[0] == '!':
-        if len(bind[1:].strip().split()) != 2:
-          logger.warning(f'Not valid setting line: "{bind}"')
-
-        name, value = bind[1:].strip().split()
+        name, value = bind[1:].strip().split(maxsplit=1)
         name = name.casefold()
         value = value.casefold()
+
 
         if name == 'deletion':
           if value not in ['keep', 'postfix', 'flush']:
             logger.warning(f'Not valid delete_mode: "{bind}"')
-          else: constants[name] = value
+          else: constants['delete_mode'] = value
         
+
         elif name == 'idle_time':
           try:
             value = float(value)
@@ -45,7 +50,36 @@ def upload_binds() -> tuple[ dict[tuple[str], list[list[str]]], dict[str, any] ]
           except ValueError:
             logger.warning(f'Not valid idle_time: "{bind}"')
 
-        continue
+
+        elif name.startswith('sens'):
+          if value.startswith('x '):
+            value = value[2:].strip()
+            try: 
+              value = float(value)
+              constants['x_sens'] = value
+            except ValueError:
+              logger.warning(f'Not valid sensivity: "{bind}"')
+
+          elif value.startswith('y '):
+            value = value[2:].strip()
+            try: 
+              value = float(value)
+              constants['y_sens'] = value
+            except ValueError:
+              logger.warning(f'Not valid sensivity: "{bind}"')
+          
+          else:  # Setting both
+            try: 
+              value = float(value)
+              constants['x_sens'] = value
+              constants['y_sens'] = value
+            except ValueError:
+              logger.warning(f'Not valid sensivity: "{bind}"')
+        
+        else:
+          logger.warning(f'Unknown constant: {bind}')
+        
+        continue  # End of commands
       
       # Regular binds
       if bind.count('-') != 1:
@@ -60,4 +94,5 @@ def upload_binds() -> tuple[ dict[tuple[str], list[list[str]]], dict[str, any] ]
   
   ret_repr = '\n'.join([repr(bind) for bind in ret.items()])
   logger.info(f'Readed binds:\n{ret_repr}')
+  logger.debug(f'Readed constants:\n{constants}')
   return ret, constants

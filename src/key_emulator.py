@@ -1,3 +1,4 @@
+import pydirectinput
 import win32con, win32api
 import logging, time, string
 
@@ -6,6 +7,19 @@ from named_pipes import PipeReader
 
 
 MAX_BUFFER_SIZE = 100
+
+
+
+class Mouse:
+  def __init__(self, x_sens = 1, y_sens = 1):
+    """
+    Default sens (1) is 20 pixels per degree
+    """
+    self.x_sens = x_sens * 15
+    self.y_sens = y_sens * 15
+
+  def move(self, x, y):
+    pydirectinput.move(int(x * self.x_sens), int(y * self.y_sens), relative=True)
 
 
 
@@ -274,10 +288,14 @@ def main():
   )
 
   binds, constants = upload_binds()
-  key_emulator = KeyEmulator(binds, constants)
 
-  pipe = PipeReader()
-  pipe.connect()
+  key_emulator = KeyEmulator(binds, constants)
+  mouse = Mouse(constants['x_sens'], constants['y_sens'])
+
+  pipe_turns = PipeReader('turns')
+  pipe_turns.connect()
+  pipe_gyro = PipeReader('gyro')
+  pipe_gyro.connect()
 
   buffer: list[str] = []  # global buffer of moves
 
@@ -286,7 +304,26 @@ def main():
   while True:
     key_emulator.press_keys()
 
-    if moves := pipe.read():
+    # Mouse
+    if angles := pipe_gyro.read():
+      pitch, yaw = angles[0], angles[1]
+
+      try:
+        pitch = float(pitch[7:])  # "pitch: 0.32141..."
+      except ValueError:
+        logger.warning(f'Corrupted pitch data: {pitch}')
+        pitch = 0
+      
+      try:
+        yaw = float(yaw[5:])  # "yaw: 0.32141..."
+      except ValueError:
+        logger.warning(f'Corrupted yaw data: {yaw}')
+        yaw = 0
+      
+      mouse.move(yaw, pitch)
+
+    # Turns
+    if moves := pipe_turns.read():
       for move in moves:  # Emulating reading one-by-one
         last_ts = time.time()
         buffer.append(move)
@@ -294,7 +331,8 @@ def main():
         trim_buffer(buffer)
         key_emulator.process_buffer(buffer)
         logger.info(f'Current buffer (last 10) - {buffer[-10:]}')
-    
+
+    # Idle check
     elif constants['idle_time'] != 0:
       if time.time() - last_ts > constants['idle_time'] and len(buffer) != 0:
         buffer.clear()

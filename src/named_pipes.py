@@ -3,11 +3,11 @@ import logging
 from time import sleep
 
 class PipeSender:
-  def __init__(self, pipe_name='\\\\.\\pipe\\Turns'):
-    self.pipe_name = pipe_name
+  def __init__(self, pipe_name='turns'):
+    self.pipe_name = '\\\\.\\pipe\\' + pipe_name
     self.pipe = None
 
-    self.logger = logging.getLogger('PipeSender')
+    self.logger = logging.getLogger('PipeSender ' + pipe_name)
 
 
   def connect(self):
@@ -26,13 +26,16 @@ class PipeSender:
     self.logger.debug("Pipe client connected.")
 
 
-  def send(self, moves: list[str]) -> None:
-    self.logger.debug(f'Sending moves: {moves}')
+  def send(self, data: list[str]) -> None:
+    """
+    Send data to pipe, separated by ';'
+    """
+    self.logger.debug(f'Sending moves: {data}')
     if not self.pipe:
       self.logger.critical("Cannot send moves, pipe is not connected.")
       return
     
-    data = ( ';'.join(moves) + ';' ).encode('utf-8')
+    data = ( ';'.join(data) + ';' ).encode('utf-8')
     try:
       win32file.WriteFile(self.pipe, data)
     except Exception as e:
@@ -46,11 +49,11 @@ class PipeSender:
 
 
 class PipeReader:
-  def __init__(self, pipe_name='\\\\.\\pipe\\Turns'):
-    self.pipe_name = pipe_name
+  def __init__(self, pipe_name='turns'):
+    self.pipe_name = '\\\\.\\pipe\\' + pipe_name
     self.pipe = None
 
-    self.logger = logging.getLogger('PipeReader')
+    self.logger = logging.getLogger('PipeReader' + pipe_name)
 
 
   def connect(self):
@@ -74,8 +77,8 @@ class PipeReader:
 
   def read(self) -> list[str] | None:
     """
-    read new data from pipe and append it to buffer
-    ret: list of readed moves or None
+    read new data from pipe
+    ret: list of readed data or None
     """
     try:
       if win32pipe.PeekNamedPipe(self.pipe, 0)[1] == 0:

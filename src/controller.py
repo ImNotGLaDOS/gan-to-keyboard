@@ -4,6 +4,7 @@ sys.coinit_flags = 0  # MTA thread mode
 import asyncio
 from bleak import BleakScanner, BleakClient
 import logging
+import math
 
 from named_pipes import PipeSender
 from cryptor import Cryptor
@@ -26,18 +27,28 @@ async def _choose_protocol(client: BleakClient) -> tuple[str, str]:
 
 
 class GANCubeController:
-  def __init__(self, send):
+  def __init__(self, send_moves, send_gyro = lambda quat: None, send_rel_gyro = lambda quat: None):
     """
-    send(moves: list[str]) -> None.
-    send(moves) called when controller wants to send list of recieved moves
+    send_moves(moves: list[str]) -> None,
+    send_gyro(quat: tuple[qw, qx, qy, qz]) -> None,
+    send_rel_gyro(quat: tuple[qw, qx, qy, qz]) -> None.
+
+    send_moves(moves) called when controller wants to send list of recieved moves
+    send_gyro(quat) called when controller wants to send new gyroscope data
+    send_rel_gyro(quat) the same as send_gyro except it sends orientation change
     """
     self.logger = logging.getLogger('Controller')
 
     self.client = None
-    self.send = send
+    self.send_moves = send_moves
+    self.send_gyro = send_gyro
+    self.send_rel_gyro = send_rel_gyro
 
     self.protocol = None  # Gen2, Gen3, Gen4
     self.move_count = None
+
+    self.prev_gyro = (0, 0, 0, 0)
+    self.last_gyro = (0, 0, 0, 0)
 
 
   async def connect_to_cube(self):
@@ -86,6 +97,8 @@ class GANCubeController:
       await self.client.start_notify(self.NOTIFY_UUID, self._notification_handler_gen4)
       # Request the initial state from the cube
       await self.client.write_gatt_char(self.WRITE_UUID, self.cryptor.encrypt(b'\x05' + b'\x00' * 19), response=True)
+      # Requesting reset
+      await self.client.write_gatt_char(self.WRITE_UUID, self.cryptor.encrypt(b'\xd2\x0d\x05\x39\x77\x00\x00\x01\x23\x45\x67\x89\xab\x00\x00\x00\x00\x00\x00\x00'), response=True)
     
     
     
@@ -100,8 +113,40 @@ class GANCubeController:
       if data[0] == 0x01:  # Last move in notation
         self.logger.debug(f'Got move data: {data.hex()}')
         move = self._parce_move_gen4(data)
-        self.logger.debug(f'Parced move: {move}')
-        self.send([move])
+        self.logger.debug(f'Parsed move: {move}')
+        self.send_moves([move])
+      
+      elif data[0] == 0xec:  # Gyroscope
+        array = ''.join(format(byte, '08b') for byte in data)
+        def getBitInt(array, start, length):
+          return int(array[start: start + length], 2)
+        
+        # Orientation
+        qw, qx, qy, qz = (getBitInt(array, i, 16) for i in range(16, 64 + 16, 16))
+        qw, qx, qy, qz = ((q & 0x7fff) / 0x7fff * (-1 if q >> 15 else 1)   for q in [qw, qx, qy, qz])
+        # Velocity
+        vx, vy, vz = (getBitInt(array, i, 4) for i in range(80, 88 + 4, 4))
+        # Here may be logic for velocity data
+
+        self.logger.debug(f'Parsed gyro: {qw}, {qx}, {qy}, {qz}')
+
+        self.prev_gyro = self.last_gyro
+        self.last_gyro = (qw, qx, qy, qz)
+        self.send_gyro((qw, qx, qy, qz))
+
+        def get_rel(l, p):
+          """
+          last * prev^-1
+          """
+          p = [p[0], -p[1], -p[2], -p[3]]
+          qw = l[0] * p[0] - l[1] * p[1] - l[2] * p[2] - l[3] * p[3]
+          qx = l[0] * p[1] + l[1] * p[0] + l[2] * p[3] - l[3] * p[2]
+          qy = l[0] * p[2] - l[1] * p[3] + l[2] * p[0] + l[3] * p[1]
+          qz = l[0] * p[3] + l[1] * p[2] - l[2] * p[1] + l[3] * p[0]
+          return (qw, qx, qy, qz)
+
+        self.send_rel_gyro(get_rel(self.last_gyro, self.prev_gyro))
+
       else:
         self.logger.debug(f'Got unknown notification: {data.hex()}')
         
@@ -120,7 +165,7 @@ class GANCubeController:
         self.logger.debug(f'Got move data: {data.hex()}')
         move = self._parce_moves_gen3(data)
         self.logger.debug(f'Parced move: {move}')
-        self.send([move])
+        self.send_moves([move])
       else:
         self.logger.debug(f'Got unknown notification: {data.hex()}')
         
@@ -142,7 +187,7 @@ class GANCubeController:
         moves = self._parce_moves_gen2(data)
         if moves:
           self.logger.debug(f'Parced moves: {moves}')
-          self.send(moves)
+          self.send_moves(moves)
 
       elif data[0] >> 4 == 0x04:  # Facelets
         self.logger.debug('Got facelets data')
@@ -224,10 +269,56 @@ async def main():
       datefmt='%H:%M:%S'
   )
 
-  pipe = PipeSender()
-  pipe.connect()
+  pipe_moves = PipeSender('turns')
+  pipe_moves.connect()
+  pipe_gyro = PipeSender('gyro')
+  pipe_gyro.connect()
 
-  controller = GANCubeController(lambda lst: pipe.send(lst))
+  def send_gyro(qw, qx, qy, qz) -> None:
+    """
+    https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles#Source_code_2
+    """
+    """
+    pitch_sin = math.sqrt(1 + 2 * (qw * qy - qx * qz))
+    pitch_cos = math.sqrt(1 - 2 * (qw * qy - qx * qz))
+    pitch_rad = 2 * math.atan2(pitch_sin, pitch_cos) - math.pi / 2  # Changed for correct neutral state 
+    pitch = pitch_rad / math.pi * 180
+    print(f'Pitch {pitch}')
+
+    yaw_sin = 2 * (qw * qz + qx * qy)
+    yaw_cos = 1 - 2 * (qw * qz + qx * qy)
+    yaw_rad = math.atan2(yaw_sin, yaw_cos)
+    yaw = yaw_rad / math.pi * 180
+    print(f'Yaw: {yaw}')
+    pipe_gyro.send([f'pitch: {pitch}', f'yaw: {yaw}'])
+    """
+    q = [qw, qx, qy, qz]
+    print(q)
+    def quat2gravity(q):
+      e = [0]*3
+      e[0] = 2 * (q[1]*q[3] - q[0]*q[2])
+      e[1] = 2 * (q[0]*q[1] + q[2]*q[3])
+      e[2] = q[0]**2 - q[1]**2 - q[2]**2 + q[3]**2
+      return e
+
+    def quat2ypr(q):
+      e = quat2gravity(q)
+      ypr = [0]*3
+      ypr[0] = math.atan2(2*q[1]*q[2] - 2*q[0]*q[3], 2*q[0]*q[0] + 2*q[1]*q[1] - 1)
+      ypr[1] = math.atan(e[0] / math.sqrt(e[1]*e[1] + e[2]*e[2]))
+      ypr[2] = math.atan(e[1] / math.sqrt(e[0]*e[0] + e[2]*e[2]))
+      ypr = [i*180/math.pi for i in ypr]
+      return ypr
+    
+    print(quat2ypr(q))
+    
+    pipe_gyro.send([f'pitch: {-quat2ypr(q)[2]}', f'yaw: {quat2ypr(q)[0]}'])
+    
+
+
+
+  controller = GANCubeController(lambda lst: pipe_moves.send(lst),
+                                 send_rel_gyro=lambda quat: send_gyro(*quat))
   
   try:
     while not await controller.connect_to_cube():

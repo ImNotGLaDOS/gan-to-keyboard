@@ -1,5 +1,7 @@
 ! DELETION FLUSH  # FLUSH or POSTFIX or KEEP
 ! IDLE_TIME 10
+! SENS X 1.0
+! SENS Y 1.0
 
 R L' - alt+tab
 R U R' U' - win+D 1.0s win+D  # Show the desktop for 1 second

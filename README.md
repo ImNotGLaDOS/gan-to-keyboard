@@ -1,8 +1,10 @@
 ## Description
 Python script to map GAN smart cube turns to keyboard presses. Works only on Windows.
 
+
 ## Disclaimer
 This project isn't properly tested yet, so if you experience any issues or don't understand something and README isn't helping, please contact the creator. It will not only help you solve the problem but also will help improve the project. Any suggestions and feedback are also welcome.
+
 
 ## How to use it
 1. Ensure you have Python 3 installed and Bluetooth enabled on your system.
@@ -10,8 +12,10 @@ This project isn't properly tested yet, so if you experience any issues or don't
 3. Configure desired binds in `binds.txt` (see explanation below).
 4. Run `RUN.bat`.
 
+
 ## Binds
 The script stores all received turns in a buffer. When it notices a formula listed in `binds.txt` at the end of the buffer, it presses the corresponding keys. Then it flushes the buffer and waits for the next match.
+
 
 ### Syntax
 `binds.txt` should contain lines of binds in the format `<formula> - <key combination> [# <comment>]`.
@@ -34,6 +38,7 @@ Example: `R U R' U' - win+D # Close all windows`
     Example: `shift+semicolon`, `ctrl+{`, `tab+0.5s+rmb`
 4. Everything after the `#` symbol is ignored by the script and may be used for comments.
 
+
 ### Tips and unexpected behavior
 Avoid having a formula that is a subsequence of another formula since the subformula will trigger the script before you perform the full one.
 
@@ -52,10 +57,15 @@ Remember to hold the cube with the right orientation: white center piece up and 
 
 The script does not store the whole history of moves -- only the last 100 moves. It also clears the buffer if it does not receive any moves for 10 seconds.
 
+
 ### Advanced adjustments
 
 You can change the script behavior in the following ways:
 - You can make more than one key combination in the bind. The combinations should be separated with space. Note that hold time (i.g. `0.5s`) is technically also a combination. **Example:** `R U - win+D 5.0s win+D  # Show the desktop for 5 seconds`
+
+- You can control your cursor by tilting the cube (if your cube have gyroscope). To to that (and chnge the sensivity), add line `! SENS 1.0` (equals to `(<number> * 15)`px per degree). You aslo can set vertical and horisontal sensivity separately, by adding `! SENS X 1.0` or `! SENS Y 1.0`. You can disable it with `! SENS 0` (also it disabled by default).
+
+- You can adjust how long the script holds the combination of keys. To do that, you can add `1.0s` (replace the number with your own) to the combination as if it were a key. **Example:** `win+shift+D+3.141s`. The default value is `0.01s`.
 
 - You can control how the script treats the buffer after it reads a formula. To do this, you can add the line `! DELETION FLUSH` (or replace "FLUSH" with name of other mode) in `binds.txt`. There are three modes:
     - `FLUSH` **(default)**. In this mode, the script clears the whole buffer after reading any formula
@@ -68,8 +78,6 @@ You can change the script behavior in the following ways:
         **Example:** You have a bind `R U R' U' - F5`. You can do the formula once, then do `R R'` continuously. The `R R'` will cancel each other out, and the end of the buffer will match the bind again.
 
 - You can control after how much time of inactivity the script clears the buffer (default is 10 seconds). To do that, add the line `! IDLE_TIME <float>`, where `<float>` is in seconds (e.g. `0.5`). `! IDLE_TIME 0` disables this feature.
-
-- You can adjust how long the script holds the combination of keys. To do that, you can add `1.0s` (replace the number with your own) to the combination as if it were a key. **Example:** `win+shift+D+3.141s`. The default value is `0.01s`.
 
 
 ## Tested cubes
@@ -88,10 +96,12 @@ A list of supported cubes:
 
 Most of the cubes have not been tested yet. If a cube with the same protocol as yours has been tested, most likely your cube will also work. If your cube is on the list and has not been tested, please contact the creator.
 
+
 ## Credits
 Almost all information about the connection protocol was taken from https://github.com/afedotov/gan-web-bluetooth.
 
 The `cryptor.py` file and some clarifications about how to connect to the cube using the `bleak` library were taken from https://github.com/Alex-Beng/PySmartCubeGenshin.
+
 
 ## Contacts
 GitHub: https://github.com/ImNotGLaDOS

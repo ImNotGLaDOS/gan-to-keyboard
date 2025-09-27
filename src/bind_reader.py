@@ -12,8 +12,8 @@ def upload_binds() -> tuple[ dict[tuple[str], list[list[str]]], dict[str, any] ]
   constants = {
     'delete_mode': 'flush',
     'idle_time': 10,
-    'x_sens': 1,
-    'y_sens': 1
+    'x_sens': 0,
+    'y_sens': 0
   }
 
   with open('binds.txt') as file:

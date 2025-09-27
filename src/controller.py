@@ -123,29 +123,12 @@ class GANCubeController:
         
         # Orientation
         qw, qx, qy, qz = (getBitInt(array, i, 16) for i in range(16, 64 + 16, 16))
-        qw, qx, qy, qz = ((q & 0x7fff) / 0x7fff * (-1 if q >> 15 else 1)   for q in [qw, qx, qy, qz])
         # Velocity
         vx, vy, vz = (getBitInt(array, i, 4) for i in range(80, 88 + 4, 4))
-        # Here may be logic for velocity data
 
-        self.logger.debug(f'Parsed gyro: {qw}, {qx}, {qy}, {qz}')
-
-        self.prev_gyro = self.last_gyro
-        self.last_gyro = (qw, qx, qy, qz)
-        self.send_gyro((qw, qx, qy, qz))
-
-        def get_rel(l, p):
-          """
-          last * prev^-1
-          """
-          p = [p[0], -p[1], -p[2], -p[3]]
-          qw = l[0] * p[0] - l[1] * p[1] - l[2] * p[2] - l[3] * p[3]
-          qx = l[0] * p[1] + l[1] * p[0] + l[2] * p[3] - l[3] * p[2]
-          qy = l[0] * p[2] - l[1] * p[3] + l[2] * p[0] + l[3] * p[1]
-          qz = l[0] * p[3] + l[1] * p[2] - l[2] * p[1] + l[3] * p[0]
-          return (qw, qx, qy, qz)
-
-        self.send_rel_gyro(get_rel(self.last_gyro, self.prev_gyro))
+        rel_gyro = self._parse_gyro(qw, qx, qy, qz)
+        self.send_gyro(self.last_gyro)
+        self.send_rel_gyro(rel_gyro)
 
       else:
         self.logger.debug(f'Got unknown notification: {data.hex()}')
@@ -166,6 +149,7 @@ class GANCubeController:
         move = self._parce_moves_gen3(data)
         self.logger.debug(f'Parced move: {move}')
         self.send_moves([move])
+        
       else:
         self.logger.debug(f'Got unknown notification: {data.hex()}')
         
@@ -197,6 +181,20 @@ class GANCubeController:
         
         self.move_count = int(getBitWord(array, 4, 8), 2)
         pass  # There can be logic of reconstucting facelets
+
+      elif data[0] >> 4 == 0x01:  # Gyro
+        array = ''.join(format(byte, '08b') for byte in data)
+        def getBitInt(array, start, length):
+          return int(array[start: start + length], 2)
+        
+        # Orientation
+        qw, qx, qy, qz = (getBitInt(array, i, 16) for i in range(4, 52 + 16, 16))
+        # Velocity
+        vx, vy, vz = (getBitInt(array, i, 4) for i in range(68, 76 + 4, 4))
+
+        rel_gyro = self._parse_gyro(qw, qx, qy, qz)
+        self.send_gyro(self.last_gyro)
+        self.send_rel_gyro(rel_gyro)
 
       else:
         self.logger.debug(f'Unknown notification.')
@@ -256,6 +254,33 @@ class GANCubeController:
       i -= 1
 
     return ret[::-1]  # TODO: Does move send in reverse?
+
+
+  def _parse_gyro(self, qw, qx, qy, qz):
+    """
+    Input: 4 integers
+    Update gyro last_gyro
+    return rel_gyro
+    """
+    qw, qx, qy, qz = ((q & 0x7fff) / 0x7fff * (-1 if q >> 15 else 1)   for q in [qw, qx, qy, qz])
+
+    self.logger.debug(f'Parsed gyro: {qw}, {qx}, {qy}, {qz}')
+
+    self.prev_gyro = self.last_gyro
+    self.last_gyro = (qw, qx, qy, qz)
+
+    def get_rel(l, p):
+      """
+      last * prev^-1
+      """
+      p = [p[0], -p[1], -p[2], -p[3]]
+      qw = l[0] * p[0] - l[1] * p[1] - l[2] * p[2] - l[3] * p[3]
+      qx = l[0] * p[1] + l[1] * p[0] + l[2] * p[3] - l[3] * p[2]
+      qy = l[0] * p[2] - l[1] * p[3] + l[2] * p[0] + l[3] * p[1]
+      qz = l[0] * p[3] + l[1] * p[2] - l[2] * p[1] + l[3] * p[0]
+      return (qw, qx, qy, qz)
+
+    return get_rel(self.last_gyro, self.prev_gyro)
 
 
 

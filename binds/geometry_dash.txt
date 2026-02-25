@@ -1,0 +1,7 @@
+! DELETION FLUSH  # FLUSH or POSTFIX or KEEP
+! IDLE_TIME 10
+
+R - space
+R' - space
+U - space
+U' - space

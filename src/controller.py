@@ -1,7 +1,7 @@
+import asyncio
 import sys
 sys.coinit_flags = 0  # MTA thread mode
 
-import asyncio
 from bleak import BleakScanner, BleakClient
 import logging
 

@@ -51,13 +51,14 @@ class KeyEmulator:
     return None
   
 
-  def _key_to_codes(self, key: list[str]) -> tuple[float, list[int | str]]:
+  def _key_to_codes(self, key: list[str]) -> tuple[float, list[int | str], str]:
     """
     key: key press in format ["ctrl", "A"]
-    ret: hold_time and list of codes 'win32con.VK_{}'
+    ret: hold_time and list of codes 'win32con.VK_{}' and press|release|both option
     """
     ret: list[int] = []
     hold_time: float = 0.05
+    press_mode: str = 'both'
 
     # Mapping for special keys
     special_keys = {
@@ -129,6 +130,10 @@ class KeyEmulator:
           self.logger.warning(f"Invalid hold time: {subkey}")
         continue
 
+      # Check for PRESS|RELEASE keyword
+      elif subkey in ['press', 'release']:
+        press_mode = subkey
+
       # Check special keys
       elif subkey in special_keys.keys():
         ret.append(special_keys[subkey])
@@ -157,21 +162,23 @@ class KeyEmulator:
       else:
         self.logger.warning(f'Unrecognizable key: {subkey}')
 
-    return hold_time, ret
+    return hold_time, ret, press_mode
 
 
-  def _create_task(self, tasks: list[tuple[float, list[int | str]]]):
+  def _create_task(self, tasks: list[tuple[float, list[int | str], str]]):  # press_mode: both, press, release
     schedule = []
 
     t = time.time()
-    for hold_time, keys in tasks:
-      for key in keys:
-        schedule.append((t, True, key))
+    for hold_time, keys, press_mode in tasks:
+      if press_mode != 'release':
+        for key in keys:
+          schedule.append((t, True, key))
       
       t += hold_time
 
-      for key in reversed(keys):
-        schedule.append((t, False, key))
+      if press_mode != 'press':
+        for key in reversed(keys):
+          schedule.append((t, False, key))
       
       t += 0.05  # To separate presses
     

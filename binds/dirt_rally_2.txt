@@ -1,0 +1,13 @@
+! DELETION FLUSH  # FLUSH or POSTFIX or KEEP
+! IDLE_TIME 10
+
+L - up+PRESS      # Throttle
+L' - up+RELEASE
+R - down+PRESS    # Brake
+R' - down+RELEASE
+D - right+0.3s    # Turn right
+D' - left+0.3s    # Turn left
+U' - .            # Gear up
+U - ,             # Gear down
+
+# Don't forget to save your binds before running the script

@@ -16,7 +16,7 @@ The script stores all received turns in a buffer. When it notices a formula list
 ### Syntax
 `binds.txt` should contain lines of binds in the format `<formula> - <key combination> [# <comment>]`.
 
-Example: `R U R' U' - win+D # Close all windows`
+Example: `R U R' U' - win+D  # Close all windows`
 1. `<formula>`: cube formula in official notation.
   
     Example: "R U R' U'"
@@ -70,6 +70,8 @@ You can change the script behavior in the following ways:
 - You can control after how much time of inactivity the script clears the buffer (default is 10 seconds). To do that, add the line `! IDLE_TIME <float>`, where `<float>` is in seconds (e.g. `0.5`). `! IDLE_TIME 0` disables this feature.
 
 - You can adjust how long the script holds the combination of keys. To do that, you can add `1.0s` (replace the number with your own) to the combination as if it were a key. **Example:** `win+shift+D+3.141s`. The default value is `0.01s`.
+
+- `PRESS`/`RELEASE` addition to key combination let's you decide with your input for how long hold the keys. `<key comb>+PRESS` press down the keys until explicit key release with `<key comb>+RELEASE`. Can be used for binds like walking. **Example:** `R - w+PRESS`, `R' - w+RELEASE` let's you walk forward after one `R` turn until `R'` or even forever.
 
 
 ## Tested cubes

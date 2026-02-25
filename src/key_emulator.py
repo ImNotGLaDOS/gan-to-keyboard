@@ -22,9 +22,9 @@ class KeyEmulator:
     self.currently_pressed: list[int | str] = []
 
 
-  def process_buffer(self, buffer: list[str]) -> None:
+  def process_buffer(self, buffer: list[str]) -> None:  # main loop
     if keys := self._recognize(buffer):
-      coded_combs = [self._key_to_codes(comb) for comb in keys]  # list[(time, coded_comb)]
+      coded_combs = [self._key_to_codes(comb) for comb in keys]  # list[(time, coded_comb, press/release/both)]
       self._create_task(coded_combs)
   
 
@@ -177,6 +177,8 @@ class KeyEmulator:
       t += hold_time
 
       if press_mode != 'press':
+        self.schedule = [task for task in self.schedule if task[2] not in keys or task[1] is True]  # Clearing previous release-tasks
+
         for key in reversed(keys):
           schedule.append((t, False, key))
       

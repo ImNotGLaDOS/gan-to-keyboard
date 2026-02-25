@@ -1,4 +1,4 @@
-import logging
+import logging, sys
 
 
 logger = logging.getLogger('Bind_Uploader')
@@ -10,7 +10,7 @@ def upload_binds() -> tuple[ dict[tuple[str], list[list[str]]], dict[str, any] ]
   """
   ret: dict[tuple[str], str] = {}
   constants = {'delete_mode': 'flush', 'idle_time': 10}
-  with open('binds.txt') as file:
+  with open(sys.argv[1]) as file:
     binds = file.read()
 
     for bind in binds.split('\n'):

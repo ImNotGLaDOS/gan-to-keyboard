@@ -1,9 +1,0 @@
-! DELETION FLUSH  # FLUSH or POSTFIX or KEEP
-! IDLE_TIME 10
-
-R L' - alt+tab
-R U R' U' - win+D 1.0s win+D  # Show the desktop for 1 second
-R' F R F' - lmb
-B2 - shift+10.0s  # Temporary CAPS, lol
-
-# Don't forget to save your binds before running the script

@@ -99,4 +99,4 @@ The `cryptor.py` file and some clarifications about how to connect to the cube u
 GitHub: https://github.com/ImNotGLaDOS
 Email: zakharov.mark@phystech.edu
 Telegram: https://t.me/im_not_glados
-Reddit: https://www.reddit.com/user/Im_Not_GLaDOS/
+Discord: https://discord.com/users/532562146085568513

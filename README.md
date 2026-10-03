@@ -24,10 +24,10 @@ Example: `R U R' U' - win+D  # Close all windows`
 3. `<key combination>`: combination of keyboard keys. Keys are joined with "+" (no spaces).
     
     A full list of supported keys: 
-    - Special keys: [`'ctrl'`, `'shift'`, `'tab'`, `'win'`, `'left'`, `'right'`, `'up'`, `'down'`, `'enter'`, `'space'`, `'esc'`/`'escape'`, `'backspace'`, `'del'`/`'delete'`, `'insert'`, `'home'`, `'end'`, `'pageup'`, `'pagedown'`, `'capslock'`, `'alt'`].
+    - Special keys: [`'ctrl'`, `'shift'`, `'tab'`, `'left'`, `'right'`, `'up'`, `'down'`, `'enter'`, `'space'`, `'esc'`/`'escape'`, `'backspace'`, `'del'`/`'delete'`, `'insert'`, `'home'`, `'end'`, `'pageup'`, `'pagedown'`, `'capslock'`, `'alt'`]. (`'win'` is not supported temporally)
     - `F1`-`F12` keys.
     - Letter and digit keys.
-    - Symbols: [`'comma' / ','`, `'period' / '.'`, `'slash' / '/'`, `'backslash' / '\'`, `'semicolon' / ';'`, `'quote' / "'"`, `'minus'` (note that `'-'` is reserved for binds separation), `'equals' / '='`, `'leftbracket' / '{'`, `'rightbracket' / '}'`, `'backtick'`].
+    - Symbols: [`'comma' / ','`, `'period' / '.'`, `'slash' / '/'`, `'backslash' / '\'`, `'semicolon' / ';'`, `'quote' / "'"`, `'minus'` (note that `'-'` is reserved for binds separation), `'equals' / '='`, `'leftbracket' / '['`, `'rightbracket' / ']'`, `'backtick'`].
     - Mouse buttons: [`'lmb' / 'lclick'`, `'rmb' / 'rclick'`]
     - Hold time as `1.1s` (see "Advanced adjustments" for clarification).
   
@@ -69,7 +69,7 @@ You can change the script behavior in the following ways:
 
 - You can control after how much time of inactivity the script clears the buffer (default is 10 seconds). To do that, add the line `! IDLE_TIME <float>`, where `<float>` is in seconds (e.g. `0.5`). `! IDLE_TIME 0` disables this feature.
 
-- You can adjust how long the script holds the combination of keys. To do that, you can add `1.0s` (replace the number with your own) to the combination as if it were a key. **Example:** `win+shift+D+3.141s`. The default value is `0.01s`.
+- You can adjust how long the script holds the combination of keys. To do that, you can add `1.0s` (replace the number with your own) to the combination as if it were a key. **Example:** `alt+shift+D+3.141s`. The default value is `0.01s`.
 
 - `PRESS`/`RELEASE` addition to key combination let's you decide with your input for how long hold the keys. `<key comb>+PRESS` press down the keys until explicit key release with `<key comb>+RELEASE`. Can be used for binds like walking. **Example:** `R - w+PRESS`, `R' - w+RELEASE` let's you walk forward after one `R` turn until `R'` or even forever.
 
@@ -96,7 +96,7 @@ Almost all information about the connection protocol was taken from https://gith
 The `cryptor.py` file and some clarifications about how to connect to the cube using the `bleak` library were taken from https://github.com/Alex-Beng/PySmartCubeGenshin.
 
 ## Contacts
-GitHub: https://github.com/ImNotGLaDOS
-Email: zakharov.mark@phystech.edu
 Telegram: https://t.me/im_not_glados
+GitHub: https://github.com/ImNotGLaDOS
+Email: markzaharov00@gmail.com
 Discord: https://discord.com/users/532562146085568513

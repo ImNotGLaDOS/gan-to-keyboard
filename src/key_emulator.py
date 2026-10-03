@@ -1,4 +1,5 @@
 import win32con, win32api
+import pydirectinput
 import logging, time, string
 
 from bind_reader import upload_binds
@@ -6,6 +7,8 @@ from named_pipes import PipeReader
 
 
 MAX_BUFFER_SIZE = 100
+
+pydirectinput.PAUSE = 0
 
 
 
@@ -118,6 +121,9 @@ class KeyEmulator:
         ']': 0xDD,  # VK_OEM_6
         '`': 0xC0,  # VK_OEM_3
     }
+    # Mapping different names into one ({'comma', ',' -> ','})
+    # TODO: reimplement properly!
+    reversed_symbol_map = {0xBD: '-', **{v: k for k, v in symbol_map.items() if len(k) == 1}}
 
     for subkey in key:
       subkey = subkey.casefold()
@@ -136,26 +142,24 @@ class KeyEmulator:
 
       # Check special keys
       elif subkey in special_keys.keys():
-        ret.append(special_keys[subkey])
+        ret.append({'win': 'winleft', 'del': 'delete'}.get(subkey, subkey))
 
       # Check special symbpls
       elif subkey in symbol_map.keys():
-        ret.append(symbol_map[subkey])
+        ret.append(reversed_symbol_map[symbol_map[subkey]])  # Remapping different names into one
       
       # Check function keys (F1-F12)
       elif subkey.startswith('f') and subkey[1:].isdigit():
         fn_num = int(subkey[1:])
         if 1 <= fn_num <= 12:
-          ret.append(getattr(win32con, f'VK_F{fn_num}'))
+          ret.append(subkey)
         else:
           self.logger.warning(f'Unsupported F key: {subkey}')
       
       # Check single character keys
       elif len(subkey) == 1:
-        if subkey in string.ascii_lowercase:
-          ret.append(ord(subkey.upper()))
-        elif subkey in string.digits:
-          ret.append(ord(subkey))
+        if subkey in string.ascii_lowercase or subkey in string.digits:
+          ret.append(subkey)
         else:
           self.logger.warning(f'Unrecognized character key: {subkey}')
       
@@ -203,11 +207,11 @@ class KeyEmulator:
         continue
 
       # Regular key
-      if isinstance(key, int):
+      if key not in ('lmb', 'rmb'):
         if is_to_press:
-          win32api.keybd_event(key, 0, 0, 0)
+          pydirectinput.keyDown(key)
         else:
-          win32api.keybd_event(key, 0, win32con.KEYEVENTF_KEYUP, 0)
+          pydirectinput.keyUp(key)
 
       # Mouse
       else:
@@ -288,7 +292,7 @@ def main():
   pipe = PipeReader()
   pipe.connect()
 
-  buffer: list[str] = []  # global buffer of moves
+  buffer: list[str] = []  # Global buffer of moves
 
   last_ts = time.time()
 
